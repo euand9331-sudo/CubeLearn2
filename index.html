@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>CubeLearn CS Style</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+:root {
+  --accent: #00e5ff;
+  --bg: #0f1115;
+  --panel: rgba(0,0,0,0.65);
+  --text: #ffffff;
+}
+
+* { box-sizing: border-box; font-family:"Segoe UI",sans-serif; }
+body { margin:0; background:var(--bg); color:var(--text); min-height:100vh; background-size:cover; background-position:center; }
+
+.overlay { background: rgba(0,0,0,0.6); min-height:100vh; padding:20px; display:flex; flex-direction:column; }
+
+h1 { text-align:center; margin-bottom:10px; }
+
+.main-container { display:flex; justify-content:center; gap:20px; flex-wrap:wrap; }
+
+.left-panel { display:flex; flex-direction:column; align-items:center; }
+
+.scramble { text-align:center; font-size:1.4rem; margin:10px 0; letter-spacing:2px; max-width:400px; }
+
+.timer { font-size:5rem; text-align:center; margin:15px 0; color: var(--accent); transition: color 0.2s; }
+
+.controls, .mode, .background-controls { display:flex; justify-content:center; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
+
+button { background: var(--panel); color:white; border:1px solid var(--accent); padding:10px 18px; font-size:1rem; cursor:pointer; border-radius:8px; transition:0.2s; }
+button:hover { background: var(--accent); color:black; }
+
+input, select { padding:8px; font-size:1rem; border-radius:6px; border:none; text-align:center; }
+
+.right-panel { display:flex; flex-direction:column; max-width:300px; }
+
+.stats, .solves { background: var(--panel); padding:10px; border-radius:12px; margin-bottom:10px; max-height:300px; overflow-y:auto; }
+
+.solve { display:flex; justify-content:flex-start; gap:10px; border-bottom:1px solid #333; padding:6px 0; }
+.solve span { min-width:50px; text-align:left; }
+.solve:first-child { color: var(--accent); font-weight:600; }
+
+#trendChart { max-width:300px; width:100%; margin-bottom:10px; background:var(--panel); padding:10px; border-radius:12px; }
+
+.session-select { background: var(--panel); color:white; border:1px solid var(--accent); padding:5px; border-radius:6px; }
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  padding: 5px 10px;
+  font-size: 0.9rem;
+  color: #aaa;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  pointer-events: none; /* so it doesn’t block clicks */
+}
+</style>
+</head>
+<body>
+<div class="overlay">
+<h1>CubeLearn CS Style</h1>
+
+<div class="mode">
+  <select id="sessionSelect" class="session-select"></select>
+  <select id="puzzleType">
+    <option value="3x3">3x3</option>
+    <option value="2x2">2x2</option>
+    <option value="4x4">4x4</option>
+    <option value="megaminx">Megaminx</option>
+  </select>
+  <button onclick="toggleMode()"><span id="modeBtn">Timer Mode</span></button>
+</div>
+
+<div class="main-container">
+  <!-- Left Panel: Scramble & Timer -->
+  <div class="left-panel">
+    <div class="scramble" id="scramble"></div>
+    <div class="timer" id="timer">0.000</div>
+    <div class="controls" id="manualControls" style="display:none;">
+      <input id="manualInput" placeholder="12.34" autocomplete="off">
+    </div>
+    <div class="controls">
+      <button onclick="addPenalty()">+2</button>
+      <button onclick="setDNF()">DNF</button>
+      <button onclick="resetSession()">Reset Current</button>
+      <button onclick="saveAll()">Save All</button>
+    </div>
+    <div class="background-controls">
+      <input type="file" accept="image/*" onchange="setBackground(event)">
+      <button onclick="clearBackground()">Reset BG</button>
+    </div>
+  </div>
+
+  <!-- Right Panel: Stats & Solves -->
+  <div class="right-panel">
+    <div class="stats" id="statsPanel">
+      <div>Solves: <span id="count">0</span></div>
+      <div>ao5: <span id="ao5">-</span></div>
+      <div>ao12: <span id="ao12">-</span></div>
+      <div>Best: <span id="best">-</span></div>
+      <div>Worst: <span id="worst">-</span></div>
+    </div>
+    <div class="solves" id="solves"></div>
+    <canvas id="trendChart"></canvas>
+  </div>
+</div>
+</div>
+
+<!-- Footer -->
+<div class="footer">
+  <div>© 2026 CubeLearn</div>
+  <div>v1.1.0</div>
+</div>
+
+<script>
+/* ---------- STATE ---------- */
+let timerMode=true, running=false, readyToStart=false, startTime=0, interval;
+let sessions={}, currentSession="1";
+let solveList=[], currentIndex=-1;
+let backgroundData=null;
+
+/* ---------- DOM ---------- */
+const timerEl=document.getElementById("timer");
+const scrambleEl=document.getElementById("scramble");
+const solvesDiv=document.getElementById("solves");
+const countEl=document.getElementById("count");
+const ao5El=document.getElementById("ao5");
+const ao12El=document.getElementById("ao12");
+const bestEl=document.getElementById("best");
+const worstEl=document.getElementById("worst");
+const manualControls=document.getElementById("manualControls");
+const manualInput=document.getElementById("manualInput");
+const sessionSelect=document.getElementById("sessionSelect");
+const puzzleType=document.getElementById("puzzleType");
+const modeBtn=document.getElementById("modeBtn");
+
+/* ---------- TREND CHART ---------- */
+const ctx=document.getElementById('trendChart').getContext('2d');
+let chart=new Chart(ctx,{
+  type:'line',
+  data:{labels:[],datasets:[{label:'Time (s)',data:[],borderColor:'cyan',backgroundColor:'transparent'}]},
+  options:{scales:{y:{beginAtZero:true}}}
+});
+
+/* ---------- SCRAMBLE ---------- */
+const movesDict={
+  "2x2":["R","L","U","D","F","B"],
+  "3x3":["R","L","U","D","F","B"],
+  "4x4":["R","L","U","D","F","B","Rw","Lw","Uw","Dw","Fw","Bw"],
+  "megaminx":["R","D","U","L","B"]
+};
+const mods=["","'","2"];
+
+function newScramble(){
+  let moves=movesDict[puzzleType.value]||movesDict["3x3"];
+  let s=[], last="";
+  while(s.length<20){
+    let m=moves[Math.floor(Math.random()*moves.length)];
+    if(m===last) continue;
+    last=m;
+    s.push(m+mods[Math.floor(Math.random()*3)]);
+  }
+  scrambleEl.textContent=s.join(" ");
+}
+newScramble();
+
+/* ---------- FORMAT ---------- */
+function format(ms){ return (ms/1000).toFixed(3); }
+
+/* ---------- TIMER / HOLD-TO-START ---------- */
+document.addEventListener("keydown", e=>{
+  if(timerMode && e.code==="Space"){
+    e.preventDefault();
+    if(!running && !readyToStart){
+      readyToStart=true;
+      timerEl.style.color="yellow"; // ready indication
+    } else if(running){
+      stopTimer();
+    }
+  }
+});
+
+document.addEventListener("keyup", e=>{
+  if(timerMode && e.code==="Space" && readyToStart){
+    readyToStart=false;
+    timerEl.style.color="var(--accent)";
+    startTimer();
+  }
+});
+
+function startTimer(){ running=true; startTime=performance.now(); interval=setInterval(()=>timerEl.textContent=format(performance.now()-startTime),10); }
+function stopTimer(){ running=false; clearInterval(interval); addSolve(performance.now()-startTime); }
+
+/* ---------- MANUAL INPUT ---------- */
+manualInput.addEventListener("keydown", e=>{
+  if(e.key==="Enter"){
+    let v=parseFloat(manualInput.value);
+    if(!isNaN(v)){ addSolve(v*1000); manualInput.value=""; }
+  }
+});
+
+/* ---------- SOLVE MANAGEMENT ---------- */
+function addSolve(time){
+  solveList.push({time,penalty:0,dnf:false});
+  currentIndex=solveList.length-1;
+  if(timerMode) newScramble();
+  updateUI();
+}
+
+function addPenalty(){ if(currentIndex>=0 && !solveList[currentIndex].dnf){ solveList[currentIndex].penalty+=2000; updateUI(); } }
+function setDNF(){ if(currentIndex>=0){ solveList[currentIndex].dnf=true; updateUI(); } }
+
+/* ---------- STATISTICS ---------- */
+function calcAO(n){
+  let valid=solveList.filter(s=>!s.dnf);
+  if(valid.length<n) return "-";
+  let last=valid.slice(-n).map(s=>s.time+s.penalty).sort((a,b)=>a-b);
+  last.shift(); last.pop();
+  return format(last.reduce((a,b)=>a+b,0)/(n-2));
+}
+
+function updateUI(){
+  solvesDiv.innerHTML="";
+  [...solveList].reverse().forEach((s,i)=>{
+    let idx=solveList.length-i;
+    let t=s.dnf?"DNF":format(s.time+s.penalty)+(s.penalty?" +":"");
+    let d=document.createElement("div"); d.className="solve";
+    d.innerHTML=`<span>#${idx}</span><span>${t}</span>`;
+    solvesDiv.appendChild(d);
+  });
+  countEl.textContent=solveList.length;
+  ao5El.textContent=calcAO(5);
+  ao12El.textContent=calcAO(12);
+  let validTimes=solveList.filter(s=>!s.dnf).map(s=>s.time+s.penalty);
+  bestEl.textContent=validTimes.length?format(Math.min(...validTimes)):"-";
+  worstEl.textContent=validTimes.length?format(Math.max(...validTimes)):"-";
+
+  chart.data.labels=solveList.map((_,i)=>i+1);
+  chart.data.datasets[0].data=solveList.map(s=>s.dnf?null:(s.time+s.penalty)/1000);
+  chart.update();
+}
+
+/* ---------- MODE TOGGLE ---------- */
+function toggleMode(){ timerMode=!timerMode; manualControls.style.display=timerMode?"none":"flex"; modeBtn.textContent=timerMode?"Timer Mode":"Manual Mode"; }
+
+/* ---------- BACKGROUND ---------- */
+function setBackground(e){ const file=e.target.files[0]; if(!file) return; const reader=new FileReader(); reader.onload=()=>{ backgroundData=reader.result; document.body.style.backgroundImage=`url(${backgroundData})`; }; reader.readAsDataURL(file); }
+function clearBackground(){ backgroundData=null; document.body.style.backgroundImage=""; }
+
+/* ---------- SESSIONS 1-15 ---------- */
+function saveAllSessions(){ sessions[currentSession]=solveList; localStorage.setItem("cubeSessions",JSON.stringify(sessions)); }
+function loadAllSessions(){ sessions=JSON.parse(localStorage.getItem("cubeSessions"))||{}; 
+  for(let i=1;i<=15;i++){ if(!sessions[i]) sessions[i]=[]; } updateSessionSelect(); }
+function updateSessionSelect(){ sessionSelect.innerHTML=""; for(let i=1;i<=15;i++){ let o=document.createElement("option"); o.value=i; o.text="Session "+i; sessionSelect.appendChild(o); } sessionSelect.value=currentSession; }
+function loadSession(){ solveList=sessions[currentSession]||[]; currentIndex=solveList.length-1; updateUI(); }
+function resetSession(){ if(confirm("Reset current session?")){ solveList=[]; currentIndex=-1; updateUI(); } }
+
+/* ---------- SAVE ALL ---------- */
+function saveAll(){
+  sessions[currentSession]=solveList;
+  const data={sessions: sessions, background: backgroundData};
+  localStorage.setItem("cubeAllData", JSON.stringify(data));
+  alert("All sessions, background, and stats saved!");
+}
+
+function loadAll(){
+  const data=localStorage.getItem("cubeAllData");
+  if(!data) return;
+  const parsed=JSON.parse(data);
+  sessions=parsed.sessions||{};
+  backgroundData=parsed.background||null;
+  if(backgroundData) document.body.style.backgroundImage=`url(${backgroundData})`;
+  loadSession();
+  alert("All data loaded!");
+}
+
+sessionSelect.addEventListener("change",()=>{ currentSession=sessionSelect.value; loadSession(); });
+
+loadAllSessions();
+currentSession="1";
+loadSession();
+loadAll();
+</script>
+</body>
+</html>
