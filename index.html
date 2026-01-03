@@ -210,7 +210,13 @@ manualInput.addEventListener("keydown", e => {
 });
 
 /* ---------- SOLVE MANAGEMENT ---------- */
-function addSolve(time){ solveList.push({time,penalty:0,dnf:false}); currentIndex=solveList.length-1; if(timerMode) newScramble(); updateUI(); }
+function addSolve(time){
+  solveList.push({time,penalty:0,dnf:false});
+  currentIndex=solveList.length-1;
+  newScramble();   // ← ONLY change
+  updateUI();
+}
+
 function addPenalty(){ if(currentIndex>=0 && !solveList[currentIndex].dnf){ solveList[currentIndex].penalty+=0.02; updateUI(); } }
 function setDNF(){ if(currentIndex>=0){ solveList[currentIndex].dnf=true; updateUI(); } }
 
@@ -393,5 +399,3 @@ updateUI();
 </script>
 </body>
 </html>
-
-
