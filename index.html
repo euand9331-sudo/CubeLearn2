@@ -1,401 +1,1921 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>CubeLearn</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<style>
-:root {
-  --accent: #00e5ff;
-  --recent-solve: #00ff00;
-  --plus2: #ffa500;
-  --dnf: #ff0000;
-  --bg: #0f1115;
-  --panel: rgba(0,0,0,0.65);
-  --text: #ffffff;
-}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>CubeLearn Ultimate - Enhanced</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@500;800&family=Segoe+UI:wght@400;600;700&display=swap" rel="stylesheet">
 
-* { box-sizing: border-box; font-family:"Segoe UI",sans-serif; }
-body { margin:0; background:var(--bg); color:var(--text); min-height:100vh; background-size:cover; background-position:center; overflow:hidden; }
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script type="module" src="https://cdn.cubing.net/js/cubing/twisty"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  
+  <style>
+    /* ========================================= */
+    /* DEFAULT (STANDARD) VARIABLES              */
+    /* ========================================= */
+    :root {
+      --accent: #00e5ff;
+      --accent-glow: transparent;
+      --recent-solve: #00ff00;
+      --plus2: #ffa500;
+      --dnf: #ff0000;
+      --bg: linear-gradient(135deg, #0f1115, #161a22);
+      --panel: rgba(0,0,0,0.65);
+      --text: #ffffff;
+      --text-muted: #aaaaaa;
+      --chart-line: #00e5ff;
+      --xp-grad-1: #ff0080;
+      --xp-grad-2: #7928ca;
+      --xp-fill: linear-gradient(90deg, var(--xp-grad-1), var(--xp-grad-2));
+      --gold: #ffd700;
+      --battle-win: #00ff00;
+      --battle-loss: #ff0000;
+      --bot-color: #ff4757;
+      --panel-border: none;
+      --panel-backdrop: none;
+      --panel-shadow: none;
+      --panel-radius: 8px;
+      --bg-size: 100% 100%;
+      --bg-animation: none;
+      --font-main: "Segoe UI", sans-serif;
+      --font-mono: "JetBrains Mono", monospace;
+      --timer-size: 5.5rem;
+      --transition-speed: 0.3s;
+    }
 
-.overlay { background: rgba(0,0,0,0.6); min-height:100vh; padding:20px; position:relative; }
+    /* ========================================= */
+    /* PLUS MODE OVERRIDES (The "Better" Look)   */
+    /* ========================================= */
+    body.plus-mode {
+      --accent: #00f2ff;
+      --accent-glow: rgba(0, 242, 255, 0.6);
+      --recent-solve: #00ff9d;
+      --plus2: #ffb800;
+      --dnf: #ff3366;
+      /* Animated Deep Aurora Background */
+      --bg: linear-gradient(300deg, #0b0d17, #161b2e, #0f2027, #203a43, #2c5364, #0b0d17);
+      --bg-size: 400% 400%;
+      --bg-animation: auroraGradient 20s ease infinite;
+      
+      --panel: rgba(20, 30, 40, 0.4);
+      --panel-border: 1px solid rgba(255, 255, 255, 0.1);
+      --panel-backdrop: blur(25px) saturate(140%);
+      --panel-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+      --panel-radius: 24px;
+      
+      --text: #ffffff;
+      --text-muted: rgba(255, 255, 255, 0.7);
+      --xp-grad-1: #7928ca;
+      --xp-grad-2: #ff0080;
+      --bot-color: #ff3366;
+      --font-main: "Inter", sans-serif;
+      --timer-size: 7.5rem;
+    }
 
-h1 { text-align:center; margin-bottom:10px; cursor:move; }
+    @keyframes auroraGradient {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
 
-.draggable { position:absolute; cursor:grab; background:var(--panel); border-radius:8px; transition: background 0.2s; }
+    * { box-sizing: border-box; font-family: var(--font-main); -webkit-tap-highlight-color: transparent; outline: none; }
+    
+    body {
+      margin:0;
+      background: var(--bg);
+      background-size: var(--bg-size);
+      background-attachment: fixed;
+      animation: var(--bg-animation);
+      color:var(--text);
+      min-height:100vh;
+      overflow-x:hidden;
+      transition: background 0.5s ease;
+      overscroll-behavior-y: none;
+    }
 
-.resize-handle { width:12px; height:12px; background:yellow; position:absolute; right:2px; bottom:2px; cursor:se-resize; display:none; border-radius:2px; }
+    /* PLUS BADGE */
+    .plus-badge {
+        display: none; 
+        background: linear-gradient(135deg, #00f2ff, #0099ff);
+        color: black; font-size: 0.7rem; padding: 3px 8px; border-radius: 6px;
+        font-weight: 900; letter-spacing: 1px; box-shadow: 0 0 20px rgba(0, 242, 255, 0.6);
+        margin-left: 10px; transform: translateY(-2px);
+        border: 1px solid rgba(255,255,255,0.5);
+    }
+    body.plus-mode .plus-badge { display: inline-block; }
 
-.scramble { text-align:center; font-size:1.4rem; margin:10px; letter-spacing:2px; max-width:400px; }
+    /* VERSION SWITCH */
+    .version-switch {
+        display: flex; background: rgba(0,0,0,0.3); padding: 4px; border-radius: 30px;
+        border: 1px solid rgba(255,255,255,0.1); margin-bottom: 15px;
+    }
+    .v-opt {
+        flex: 1; text-align: center; padding: 10px; cursor: pointer; border-radius: 25px;
+        font-size: 0.85rem; font-weight: bold; transition: all 0.3s; opacity: 0.6;
+    }
+    .v-opt.active { opacity: 1; background: var(--accent); color: black; box-shadow: 0 0 15px var(--accent-glow); }
 
-.timer { font-size:5rem; text-align:center; margin:15px 0; color: var(--accent); transition: color 0.2s; }
+    .overlay { background: rgba(0,0,0,0.0); min-height:100vh; padding:20px; position:relative; }
 
-.controls, .mode, .background-controls, .color-customization { display:flex; justify-content:center; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
+    /* HEADER */
+    h1 { 
+      text-align:center; margin: 0; position: absolute; top: 15px; left: 50%;
+      transform: translateX(-50%); width: 100%; pointer-events: none;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.5); z-index: 0;
+      display: flex; justify-content: center; align-items: center;
+    }
 
-button { background: var(--panel); color:white; border:1px solid var(--accent); padding:10px 18px; font-size:1rem; cursor:pointer; border-radius:8px; transition:0.2s; }
-button:hover { background: var(--accent); color:black; }
+    /* ALERTS */
+    .probation-alert {
+        display: none; position: fixed; bottom: 20px; right: 20px;
+        background: rgba(20, 10, 5, 0.95); border-left: 4px solid #ff9900;
+        padding: 15px 20px; border-radius: 4px; box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+        z-index: 6000; max-width: 320px; animation: slideIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        backdrop-filter: blur(5px);
+    }
+    .probation-alert.show { display: flex; flex-direction: column; gap: 5px; }
+    .probation-header { display: flex; align-items: center; gap: 10px; color: #ff9900; font-weight: bold; font-size: 1rem; margin-bottom: 5px; }
+    .probation-body { color: #ddd; font-size: 0.85rem; line-height: 1.4; }
+    .probation-close { position: absolute; top: 5px; right: 5px; background: none; border: none; color: #666; cursor: pointer; font-size: 1.5rem; padding: 0 5px; line-height: 1; }
+    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
-input, select { padding:8px; font-size:1rem; border-radius:6px; border:none; text-align:center; }
+    .ban-overlay {
+        display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(10, 0, 0, 0.95); z-index: 10000;
+        justify-content: center; align-items: center; flex-direction: column;
+        backdrop-filter: blur(10px); text-align: center;
+    }
+    .ban-content { border: 2px solid #ff0000; background: rgba(50, 0, 0, 0.8); padding: 40px; border-radius: 12px; box-shadow: 0 0 50px rgba(0,0,0,0.5); max-width: 90%; width: 500px; animation: popIn 0.3s ease; }
+    .ban-title { font-size: 3rem; color: #ff0000; margin: 0 0 10px 0; font-weight: 800; }
+    .ban-reason { font-family: 'JetBrains Mono', monospace; color: #ffaaaa; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 4px; display: inline-block; margin-bottom: 20px; border: 1px dashed #ff4444; }
+    @keyframes popIn { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
 
-.right-panel { display:flex; flex-direction:column; max-width:300px; }
+    /* STORE (Standard Only) */
+    .store-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 5000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
+    .store-card { background: linear-gradient(135deg, #1e1e1e, #252525); border: 1px solid var(--gold); padding: 30px; border-radius: 16px; width: 350px; text-align: center; box-shadow: 0 0 50px rgba(255, 215, 0, 0.15); position: relative; }
+    .store-title { font-size: 2rem; color: var(--gold); margin-bottom: 10px; font-weight: 800; text-transform: uppercase; }
+    .store-price { font-size: 3rem; color: white; font-weight: bold; margin: 15px 0; font-family: 'JetBrains Mono'; }
+    .btn-buy { background: linear-gradient(135deg, #ffd700, #ffaa00); color: black; font-weight: 800; border: none; padding: 15px; width: 100%; font-size: 1.2rem; border-radius: 8px; cursor: pointer; box-shadow: 0 5px 15px rgba(255, 215, 0, 0.3); transition: transform 0.2s; }
+    .btn-buy:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(255, 215, 0, 0.5); }
+    .close-store { position: absolute; top: 10px; right: 15px; color: #666; cursor: pointer; font-size: 1.5rem; background: none; border: none; }
 
-.stats, .solves { background: var(--panel); padding:10px; border-radius:12px; margin-bottom:10px; max-height:300px; overflow-y:auto; }
+    /* --- DRAGGABLE PANELS --- */
+    .draggable { 
+      position:absolute; cursor:grab; 
+      background: var(--panel); border-radius: var(--panel-radius);
+      backdrop-filter: var(--panel-backdrop); -webkit-backdrop-filter: var(--panel-backdrop);
+      border: var(--panel-border); box-shadow: var(--panel-shadow);
+      transition: all 0.3s ease;
+      transform-style: preserve-3d; /* For 3D Tilt */
+    }
+    .draggable:active { cursor: grabbing; }
 
-.solve { display:flex; justify-content:flex-start; gap:10px; border-bottom:1px solid #333; padding:6px 0; }
-.solve span { min-width:50px; text-align:left; }
+    /* Focus Mode Logic - Hides everything except timer in Plus Mode */
+    body.plus-mode.focus-active .draggable:not(#leftPanel),
+    body.plus-mode.focus-active .icon-bar,
+    body.plus-mode.focus-active .footer,
+    body.plus-mode.focus-active h1,
+    body.plus-mode.focus-active #editToggle {
+        opacity: 0;
+        pointer-events: none;
+        transform: scale(0.95);
+    }
+    
+    /* Timer Wrapper Focus Mode specifics */
+    body.plus-mode.focus-active .controls,
+    body.plus-mode.focus-active .background-controls {
+        opacity: 0; pointer-events: none;
+    }
 
-#trendChart { max-width:300px; width:100%; margin-bottom:10px; background:var(--panel); padding:10px; border-radius:12px; }
+    .resize-handle { width:12px; height:12px; background:var(--accent); position:absolute; right:2px; bottom:2px; cursor:se-resize; display:none; border-radius:2px; opacity:0.7; }
+    body.plus-mode .resize-handle { background: transparent; }
+    body.plus-mode .resize-handle::after { content: ''; position: absolute; bottom: 5px; right: 5px; width: 6px; height: 6px; border-right: 2px solid rgba(255,255,255,0.3); border-bottom: 2px solid rgba(255,255,255,0.3); }
 
-.session-select { background: var(--panel); color:white; border:1px solid var(--accent); padding:5px; border-radius:6px; }
+    /* --- TOOLBAR UI --- */
+    .toolbar { display: flex; gap: 12px; align-items: center; padding: 10px 15px; background: var(--panel); backdrop-filter: var(--panel-backdrop); border-radius: 12px; border: var(--panel-border); }
+    .select-group { position: relative; display: flex; align-items: center; }
+    .select-group svg { position: absolute; left: 10px; pointer-events: none; color: var(--accent); width: 16px; height: 16px; z-index: 1; filter: drop-shadow(0 0 5px var(--accent-glow)); }
+    .custom-select { appearance: none; -webkit-appearance: none; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: white; padding: 8px 30px 8px 35px; border-radius: 6px; font-size: 0.9rem; cursor: pointer; transition: all 0.2s; font-weight: 500; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.5)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 5px center; background-size: 16px; }
+    
+    body.plus-mode .custom-select { background: rgba(0,0,0,0.2); border-radius: 10px; font-weight: 600; padding: 10px 35px 10px 40px; }
+    body.plus-mode .custom-select:hover { border-color: var(--accent); background: rgba(0,0,0,0.4); box-shadow: 0 0 15px rgba(0,0,0,0.2); }
 
-.footer { display:flex; justify-content:space-between; padding:5px 10px; font-size:0.9rem; color:#aaa; position:fixed; bottom:0; left:0; right:0; pointer-events:none; }
+    .segmented-control { display: flex; background: rgba(0, 0, 0, 0.5); padding: 4px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); }
+    .segment-btn { background: transparent; border: none; color: rgba(255, 255, 255, 0.5); padding: 6px 12px; font-size: 0.85rem; font-weight: 600; border-radius: 6px; cursor: pointer; transition: all 0.2s; box-shadow: none !important; }
+    .segment-btn.active { background: var(--accent); color: #000; box-shadow: 0 2px 5px rgba(0,0,0,0.2) !important; }
+    .segment-btn:hover:not(.active) { color: white; }
+    body.plus-mode .segment-btn.active { box-shadow: 0 0 15px var(--accent-glow) !important; font-weight: 800; transform: scale(1.05); }
+    #btnBattleMode.active { background: linear-gradient(135deg, #ff416c, #ff4b2b); color: white; }
+    #btnBattleMode.locked-btn { opacity: 0.6; cursor: not-allowed; }
 
-.edit-mode-toggle { position:fixed; top:10px; right:10px; z-index:1000; }
-</style>
+    /* ---------- TIMER STYLES ---------- */
+    .timer-wrapper {
+      background: rgba(0, 0, 0, 0.3); border-radius: 16px; padding: 25px 20px; margin: 15px 0;
+      border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); position: relative; overflow: hidden; min-height: 150px; 
+      touch-action: none; user-select: none; -webkit-user-select: none;
+    }
+    
+    body.plus-mode .timer-wrapper {
+        background: rgba(0,0,0,0.2); border-radius: 30px; min-height: 200px; padding: 30px;
+        box-shadow: inset 0 0 40px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05);
+    }
+    
+    .timer-wrapper.ready { border-color: #00ff00; box-shadow: 0 0 30px rgba(0, 255, 0, 0.2), inset 0 0 20px rgba(0, 255, 0, 0.1); transform: scale(1.02); }
+    .timer-wrapper.ready .timer { color: #00ff00; text-shadow: 0 0 50px #00ff00; }
+    .timer-wrapper.running { border-color: rgba(255,255,255,0.1); background: rgba(0,0,0,0.6); }
+    body.plus-mode .timer-wrapper.running { background: transparent; border-color: transparent; box-shadow: none; }
+    .timer-wrapper.running .timer { color: #fff; opacity: 0.9; text-shadow: none; }
+    body.plus-mode .timer-wrapper.running .timer { text-shadow: 0 0 10px rgba(255,255,255,0.2); animation: pulseTimer 1s infinite; }
+    
+    @keyframes pulseTimer { 0% { opacity: 0.8; } 50% { opacity: 1; } 100% { opacity: 0.8; } }
+
+    .timer { 
+      font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: var(--timer-size); 
+      line-height: 1; text-align: center; color: var(--accent); 
+      transition: color 0.1s; text-shadow: 0 0 30px var(--accent-glow); z-index: 2; font-variant-numeric: tabular-nums;
+    }
+
+    .manual-input { display: none; font-family: 'JetBrains Mono', monospace; font-size: 4rem; background: transparent; border: none; border-bottom: 2px solid var(--accent); color: var(--text); text-align: center; width: 80%; outline: none; margin-bottom: 10px; }
+    .timer-wrapper.manual-mode .timer { display: none; }
+    .timer-wrapper.manual-mode .manual-input { display: block; }
+    .timer-ao5 { margin-top: 10px; font-family: 'JetBrains Mono', monospace; font-size: 1rem; color: var(--text-muted); background: rgba(255,255,255,0.1); padding: 4px 12px; border-radius: 20px; letter-spacing: 1px; transition: opacity 0.2s; }
+
+    .controls, .mode, .background-controls { display:flex; justify-content:center; gap:10px; margin-bottom:10px; flex-wrap:wrap; transition: opacity 0.3s; }
+    
+    button { background: var(--panel); color: var(--text); border:1px solid var(--accent); padding:10px 18px; font-size:1rem; cursor:pointer; border-radius:8px; transition:0.2s; }
+    button:active { transform: scale(0.95); }
+    button:hover { background: var(--accent); color:black; box-shadow: 0 0 10px var(--accent-glow); }
+    body.plus-mode button { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; font-weight: 600; padding: 12px 20px; }
+    body.plus-mode button:hover { background: var(--accent); border-color: transparent; box-shadow: 0 0 20px var(--accent-glow); }
+
+    input, select, textarea { padding:8px; font-size:1rem; border-radius:6px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.2); color: var(--text); text-align:center; }
+    option { background: #333; color: white; }
+
+    /* ---------- LAYOUT POSITIONS ---------- */
+    #modePanel { top: 80px; left: 20px; z-index: 10; }
+    #rightPanel { display:flex; flex-direction:column; width: 320px; top: 150px; left: 20px; bottom: 20px; max-height: calc(100vh - 170px); }
+    #leftPanel { width: 500px; top: 35%; left: calc(50% - 250px); }
+    #visualPanel { top: 80px; right: 20px; padding: 10px; width: 200px; height: 200px; display: flex; justify-content: center; align-items: center; }
+    #scramblePanel { padding: 15px 20px; max-width: 800px; display: flex; flex-direction: column; align-items: center; top: 50px; left: 50%; transform: translateX(-50%); }
+    
+    body.plus-mode #leftPanel { width: 600px; left: calc(50% - 300px); background: transparent; border: none; box-shadow: none; backdrop-filter: none; }
+    body.plus-mode #scramblePanel { border-radius: 50px; background: rgba(0,0,0,0.2); backdrop-filter: blur(10px); }
+    body.plus-mode .scramble { font-size: 1.8rem; font-weight: 600; text-shadow: 0 2px 5px rgba(0,0,0,0.5); }
+
+    /* Battle Panel Styles */
+    #battlePanel { display: none; flex-direction: column; width: 100%; margin-top: 15px; padding: 15px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; position: relative; }
+    .battle-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-family: 'JetBrains Mono'; font-weight: bold; font-size: 1.1rem; }
+    .vs-badge { background: linear-gradient(135deg, #ff416c, #ff4b2b); color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.9rem; box-shadow: 0 0 10px rgba(255, 75, 43, 0.4); }
+    .racer-row { margin-bottom: 12px; }
+    .racer-info { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 4px; color: #ccc; }
+    .progress-track { width: 100%; height: 12px; background: rgba(255,255,255,0.1); border-radius: 6px; overflow: hidden; position: relative; }
+    .progress-fill { height: 100%; width: 0%; transition: width 0.1s linear; }
+    .user-fill { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+    .bot-fill { background: var(--bot-color); box-shadow: 0 0 8px var(--bot-color); }
+    
+    /* Plus Battle Tweaks */
+    body.plus-mode #battlePanel { border-radius: 20px; backdrop-filter: blur(20px); }
+    body.plus-mode .progress-track { height: 16px; border-radius: 10px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.05); }
+    body.plus-mode .progress-fill { border-radius: 10px; position: relative; }
+    /* Laser Effect for Plus */
+    body.plus-mode .user-fill { background: linear-gradient(90deg, var(--accent), white); box-shadow: 0 0 20px var(--accent); }
+    body.plus-mode .bot-fill { background: linear-gradient(90deg, var(--bot-color), white); box-shadow: 0 0 20px var(--bot-color); }
+
+    .battle-gap { font-family: 'JetBrains Mono'; font-weight: bold; font-size: 0.9rem; margin-left: 10px; }
+    .battle-result { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; flex-direction: column; z-index: 10; border-radius: 12px; }
+    .battle-result-text { font-size: 2rem; font-weight: 800; margin-bottom: 5px; text-transform: uppercase; }
+    .battle-result-sub { font-size: 0.9rem; color: #ccc; }
+
+    /* Stats & Charts */
+    .stats-dashboard { padding: 15px; margin-bottom: 5px; }
+    .stat-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; }
+    .stat-header-title { font-size: 0.9rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+    .stat-header-val { font-size: 1.5rem; font-family: 'JetBrains Mono'; font-weight: bold; color: var(--accent); }
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .stat-card { background: rgba(255,255,255,0.05); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; align-items: center; border: 1px solid rgba(255,255,255,0.05); transition: transform 0.2s; }
+    
+    body.plus-mode .stat-header-val { font-size: 1.8rem; text-shadow: 0 0 15px var(--accent-glow); }
+    body.plus-mode .stat-card { background: rgba(255,255,255,0.03); border-radius: 12px; padding: 12px; }
+    body.plus-mode .stat-card:hover { background: rgba(255,255,255,0.08); transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+
+    .stat-label { font-size: 0.75rem; color: #888; text-transform: uppercase; margin-bottom: 4px; font-weight: 600; }
+    .stat-value { font-family: 'JetBrains Mono', monospace; font-size: 1.1rem; color: var(--text); font-weight: bold; }
+    .stat-value.highlight { color: var(--accent); }
+    .chart-container { padding: 15px; background: rgba(0,0,0,0.2); border-radius: 12px; margin: 0 10px 10px 10px; border: 1px solid rgba(255,255,255,0.05); height: 160px; position: relative; }
+    #trendChart { width: 100%; height: 100%; }
+
+    /* Solves List */
+    .solves { padding: 0; margin-bottom:10px; overflow-y:auto; border-top: 1px solid rgba(255,255,255,0.1); flex-grow: 1; position: relative; }
+    .solves-header { display: flex; padding: 10px 12px; position: sticky; top: 0; background: rgba(10, 10, 12, 0.9); backdrop-filter: blur(5px); z-index: 5; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 0.75rem; font-weight: 700; color: #777; text-transform: uppercase; letter-spacing: 1px; }
+    .solve { display:flex; align-items: center; border-bottom:1px solid rgba(255,255,255,0.03); padding: 8px 12px; cursor: pointer; transition: background 0.1s; font-size: 0.95rem; }
+    .solve:hover { background: rgba(255,255,255,0.08); }
+    .col-id { flex: 0 0 45px; color: #555; font-family: 'JetBrains Mono'; font-size: 0.8rem; }
+    .col-time { flex: 1; font-family: 'JetBrains Mono'; font-weight: bold; text-align: left; }
+    .col-ao5 { flex: 1; font-family: 'JetBrains Mono'; color: #888; text-align: right; font-size: 0.9rem; }
+    .col-icon { flex: 0 0 20px; text-align: right; }
+
+    .footer { display:flex; justify-content:space-between; padding:5px 10px; font-size:0.9rem; color:#aaa; position:fixed; bottom:0; left:0; right:0; pointer-events:none; }
+    .edit-mode-toggle { position:fixed; top:10px; left:10px; z-index:1000; }
+    
+    /* XP & BADGES */
+    .icon-bar { position: fixed; top: 15px; right: 20px; z-index: 2000; display: flex; gap: 15px; align-items: center; transition: opacity 0.3s; }
+    .icon-btn { cursor: pointer; color: var(--text); transition: transform 0.3s, color 0.3s; filter: drop-shadow(0 0 2px rgba(0,0,0,0.5)); }
+    .icon-btn:hover { transform: scale(1.1); color: var(--accent); }
+    .settings-icon:hover { transform: rotate(90deg); color: var(--accent); }
+    .xp-badge { display: none; align-items: center; gap: 10px; padding: 4px 12px 4px 4px; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 30px; cursor: pointer; transition: all 0.3s; }
+    .xp-badge:hover { border-color: var(--accent); box-shadow: 0 0 15px rgba(0, 229, 255, 0.15); transform: translateY(-1px); }
+    .xp-level-circle { width: 32px; height: 32px; border-radius: 50%; background: var(--xp-fill); display: flex; justify-content: center; align-items: center; font-weight: 800; font-size: 0.8rem; color: white; box-shadow: 0 0 10px var(--xp-grad-1); }
+    .xp-info { display: flex; flex-direction: column; gap: 3px; min-width: 80px; }
+    .xp-username { font-size: 0.85rem; font-weight: 700; color: white; line-height: 1; }
+    .xp-mini-bar-bg { width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; }
+    .xp-mini-fill { height: 100%; width: 0%; background: var(--xp-fill); transition: width 0.5s ease; box-shadow: 0 0 5px var(--xp-grad-1); }
+    
+    body.plus-mode .xp-level-circle { width: 36px; height: 36px; }
+
+    /* Account Tier Badges */
+    .account-badge { font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: auto; letter-spacing: 0.5px; text-transform: uppercase; }
+    .account-badge.premium { background: linear-gradient(135deg, #ffd700, #ffaa00); color: black; box-shadow: 0 0 8px rgba(255, 215, 0, 0.4); }
+    .account-badge.standard { background: rgba(255,255,255,0.2); color: #ccc; }
+
+    /* NOTIFICATIONS */
+    .pb-notification { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0); background: rgba(0, 0, 0, 0.9); padding: 30px 50px; border-radius: 20px; border: 2px solid var(--accent); text-align: center; z-index: 5000; transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: none; box-shadow: 0 0 30px var(--accent); }
+    .pb-notification.show { transform: translate(-50%, -50%) scale(1); }
+    .pb-text { font-size: 3rem; color: var(--accent); font-weight: bold; margin: 0; text-shadow: 0 0 10px var(--accent); }
+    
+    body.plus-mode .pb-notification { background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); box-shadow: 0 0 50px var(--accent); border-radius: 30px; }
+    body.plus-mode .pb-text { font-size: 4rem; font-style: italic; text-shadow: 0 0 20px var(--accent); animation: rainbowGlow 2s infinite; }
+    @keyframes rainbowGlow { 0% { color: #ff0000; text-shadow: 0 0 20px #ff0000; } 20% { color: #ffff00; } 40% { color: #00ff00; } 60% { color: #00ffff; } 80% { color: #0000ff; } 100% { color: #ff00ff; } }
+
+    .pb-sub { font-size: 1.3rem; color: white; margin-top: 10px; font-weight: 300; }
+    .achievement-notif { border-color: var(--gold); box-shadow: 0 0 30px var(--gold); }
+    .achievement-title { font-size: 1.8rem; color: var(--gold); font-weight: bold; margin-bottom: 5px; }
+
+    /* MODALS */
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); z-index: 3000; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
+    .modal-content { background: var(--panel); padding: 25px; border-radius: 16px; width: 400px; max-width: 90%; text-align: center; border: 1px solid var(--accent); box-shadow: 0 0 30px rgba(0,0,0,0.5); backdrop-filter: var(--panel-backdrop); -webkit-backdrop-filter: var(--panel-backdrop); }
+    body.plus-mode .modal-content { border-radius: 20px; width: 450px; border-color: rgba(255,255,255,0.1); }
+    .modal-time { font-size: 3rem; color: var(--accent); margin: 10px 0; }
+    .modal-scramble { font-size: 0.9rem; color: #ccc; margin-bottom: 20px; font-family: monospace; word-wrap: break-word;}
+    .modal-actions { display: flex; justify-content: center; gap: 10px; margin-bottom: 15px; }
+    .modal-actions button.active { background: var(--accent); color: black; font-weight: bold; }
+    .delete-btn { border-color: #ff4444; color: #ff4444; }
+    .delete-btn:hover { background: #ff4444; color: white; }
+
+    /* Profile & Settings */
+    .profile-dashboard { width: 500px; max-width: 95%; padding: 0; overflow: hidden; }
+    .profile-header { background: rgba(255,255,255,0.05); padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 15px; }
+    .profile-avatar { width: 60px; height: 60px; border-radius: 50%; background: var(--xp-fill); display: flex; justify-content: center; align-items: center; font-size: 1.5rem; font-weight: bold; box-shadow: 0 0 15px var(--xp-grad-1); }
+    .profile-info { text-align: left; flex: 1; }
+    .profile-name { font-size: 1.5rem; font-weight: 800; display:flex; align-items:center; gap:10px; }
+    .profile-level { font-size: 0.9rem; color: #aaa; margin-top: 2px; }
+    .profile-tabs { display: flex; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .p-tab { flex: 1; padding: 12px; cursor: pointer; background: transparent; border: none; border-bottom: 3px solid transparent; color: #777; font-weight: 600; }
+    .p-tab.active { border-color: var(--accent); color: white; background: rgba(255,255,255,0.02); }
+    .p-content { padding: 20px; display: none; max-height: 400px; overflow-y: auto; }
+    .p-content.active { display: block; }
+    .p-stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; text-align: left; }
+    .p-stat-box { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; }
+    .p-stat-label { font-size: 0.75rem; color: #888; text-transform: uppercase; }
+    .p-stat-val { font-size: 1.2rem; font-weight: bold; color: white; font-family: 'JetBrains Mono'; }
+    .badges-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 10px; }
+    .badge-item { background: rgba(255,255,255,0.05); aspect-ratio: 1; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; position: relative; cursor: help; border: 1px solid transparent; transition: all 0.2s; opacity: 0.3; filter: grayscale(100%); }
+    .badge-item.unlocked { opacity: 1; filter: grayscale(0%); border-color: var(--gold); background: rgba(255, 215, 0, 0.1); }
+    .badge-item:hover { transform: scale(1.1); z-index: 10; }
+    .badge-tooltip { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: #000; padding: 5px 10px; border-radius: 4px; font-size: 0.7rem; white-space: nowrap; display: none; border: 1px solid #333; z-index: 20; }
+    .badge-item:hover .badge-tooltip { display: block; }
+
+    #settingsPanel { display: none; flex-direction: column; gap: 10px; padding: 20px; width: 300px; z-index: 2001; }
+    #settingsPanel h3 { margin: 0 0 10px 0; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 5px; }
+    #settingsPanel label { display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; }
+    #settingsPanel input[type="color"] { width: 40px; height: 30px; padding: 0; border: none; cursor: pointer; }
+
+    .scramble-panel .scramble { margin: 0; font-size: 1.5rem; letter-spacing: 1px; text-align: center; line-height: 1.5; font-weight: 500; }
+    twisty-player { width: 100%; height: 100%; background: transparent; }
+    .context-menu { display: none; position: absolute; z-index: 10000; width: 220px; background: rgba(30, 34, 43, 0.95); border: 1px solid var(--accent); border-radius: 6px; box-shadow: 0 4px 15px rgba(0,0,0,0.7); backdrop-filter: blur(5px); overflow: hidden; padding: 5px 0; }
+    .menu-item { padding: 10px 15px; cursor: pointer; color: white; font-size: 0.95rem; transition: background 0.1s; }
+    .menu-item:hover { background: var(--accent); color: black; }
+    .login-form { display: flex; flex-direction: column; gap: 10px; padding: 20px; }
+    .login-form input { width: 100%; box-sizing: border-box; }
+    .tab-btns { display: flex; gap: 5px; margin-bottom: 10px; }
+    .tab-btn { flex: 1; opacity: 0.5; border: none; }
+    .tab-btn.active { opacity: 1; border-bottom: 2px solid var(--accent); border-radius: 0; background: none; }
+
+    /* ========================================= */
+    /* MOBILE OPTIMIZATION (MEDIA QUERIES) */
+    /* ========================================= */
+    @media (max-width: 900px) {
+        .draggable:not(#settingsPanel) {
+            position: relative !important;
+            top: auto !important;
+            left: auto !important;
+            transform: none !important;
+            width: 100% !important;
+            margin-bottom: 15px;
+            box-shadow: none !important;
+        }
+        
+        body.plus-mode .draggable:not(#settingsPanel) {
+             background: rgba(20,25,35,0.4) !important;
+             border: 1px solid rgba(255,255,255,0.05) !important;
+        }
+
+        body { padding: 10px; padding-bottom: 40px; display: flex; flex-direction: column; overflow-y: auto; }
+        h1 { position: relative; left: auto; transform: none; margin-bottom: 15px; top: auto; font-size: 1.8rem; }
+        .edit-mode-toggle { display: none; }
+        #modePanel { order: 2; margin: 0 auto; width: 100%; max-width: 500px; justify-content: center; flex-wrap: wrap; }
+        #scramblePanel { order: 1; max-width: 100%; margin-top: 0; top: 0; }
+        .scramble { font-size: 1.2rem; }
+        #leftPanel { order: 3; width: 100%; max-width: 500px; margin: 0 auto; top: auto; left: auto; }
+        .timer-wrapper { min-height: 250px; cursor: pointer; } 
+        .timer { font-size: 5rem; }
+        #rightPanel { order: 4; width: 100%; max-width: 500px; margin: 0 auto; top: auto; left: auto; max-height: none; }
+        #visualPanel { display: none; } 
+        .toolbar { flex-direction: column; width: 100%; }
+        .select-group, .segmented-control { width: 100%; justify-content: center; }
+        .custom-select { width: 100%; }
+        .pb-notification { width: 90%; }
+        .pb-text { font-size: 2.5rem; }
+        .resize-handle { display: none !important; }
+        .timer-wrapper:active { background: rgba(255,255,255,0.05); }
+    }
+  </style>
 </head>
+
 <body>
+
+<div id="probationAlert" class="probation-alert">
+    <button class="probation-close" onclick="closeWarning()">×</button>
+    <div class="probation-header">
+        <span>⚠️ Suspicious Time</span>
+    </div>
+    <div class="probation-body">
+        This time is statistically unlikely.<br>
+        <span style="color:#ff5555; font-weight:bold;">Delete this solve immediately.</span><br>
+        Starting a new timer without deleting this will result in a ban.
+    </div>
+</div>
+
+<div id="banOverlay" class="ban-overlay">
+    <div class="ban-content">
+        <div class="ban-title">ACCOUNT DELETED</div>
+        <div style="font-size:4rem; margin-bottom:10px;">⛔</div>
+        <div class="ban-sub">Anti-Cheat Violation</div>
+        <div class="ban-reason" id="banReasonText">Failure to delete cheated time.</div>
+        <div style="color:#aaa; font-size:0.9rem; margin-top:10px;">
+            You continued to solve while a suspicious time was on your record.<br>
+            All data has been wiped.
+        </div>
+        <button onclick="location.reload()" style="margin-top:30px; border-color:#ff4444; color:#ff4444;">Restart (Refresh)</button>
+    </div>
+</div>
+
+<div id="storeModal" class="store-modal">
+    <div class="store-card">
+        <button class="close-store" onclick="toggleStore()">×</button>
+        <div class="store-title">Upgrade to Pro</div>
+        <div class="store-price">$4.99</div>
+        <div style="font-size: 0.8rem; color: #888; margin-bottom: 20px;">One-time purchase</div>
+        <ul class="store-features">
+            <li>Unlock <b>Battle Mode</b> (VS Bot)</li>
+            <li>Double XP Gains in Battle</li>
+            <li>Exclusive Gold Badge</li>
+            <li>Support Development</li>
+        </ul>
+        <button class="btn-buy" onclick="processPayment()">Purchase Now</button>
+        <div style="margin-top: 10px; font-size: 0.7rem; color: #666;">
+            * This is a simulation. No money is charged.
+        </div>
+    </div>
+</div>
+
 <div class="overlay">
+  <h1 id="title">CubeLearn <span class="plus-badge">PLUS</span></h1>
 
-<h1 id="title">CubeLearn</h1>
+  <button class="edit-mode-toggle" id="editToggle" onclick="toggleEditMode()">Edit Mode: OFF</button>
+  
+  <div class="icon-bar">
+    <div class="icon-btn" id="guestAuthIcon" onclick="toggleAuthModal()" title="Login">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle>
+      </svg>
+    </div>
 
-<button class="edit-mode-toggle" id="editToggle">Edit Mode: OFF</button>
+    <div class="xp-badge" id="xpBadge" onclick="toggleAuthModal()" title="My Profile">
+       <div class="xp-level-circle" id="topNavLevel">1</div>
+       <div class="xp-info">
+          <div class="xp-username" id="topNavUser">User</div>
+          <div class="xp-mini-bar-bg">
+             <div class="xp-mini-fill" id="topNavXpFill"></div>
+          </div>
+       </div>
+    </div>
 
-<!-- Mode & Session -->
-<div class="mode draggable" id="modePanel">
-  <select id="sessionSelect" class="session-select"></select>
-  <select id="puzzleTypeSelect">
-    <option value="3x3">3x3</option>
-    <option value="2x2">2x2</option>
-    <option value="4x4">4x4</option>
-    <option value="megaminx">Megaminx</option>
-    <option value="skewb">Skewb</option>
-  </select>
-  <button onclick="toggleMode()"><span id="modeBtn">Timer Mode</span></button>
-  <div class="resize-handle"></div>
-</div>
-
-<!-- Color customization -->
-<div class="color-customization draggable" id="colorPanel">
-  <label>Timer Color: <input type="color" id="timerColor" value="#00e5ff"></label>
-  <label>Recent Solve: <input type="color" id="recentColor" value="#00ff00"></label>
-  <label>+2 Solve: <input type="color" id="plus2Color" value="#ffa500"></label>
-  <label>DNF Solve: <input type="color" id="dnfColor" value="#ff0000"></label>
-  <label>Tile Style:
-    <select id="tileStyleSelect">
-      <option value="default">Default</option>
-      <option value="solid">Solid Color</option>
-      <option value="custom">Custom Colors</option>
-    </select>
-  </label>
-  <label id="solidColorLabel" style="display:none;">
-    Solid Color: <input type="color" id="solidTileColor" value="#333333">
-  </label>
-  <div class="resize-handle"></div>
-</div>
-
-<!-- Left Panel -->
-<div class="left-panel draggable" id="leftPanel">
-  <div class="scramble" id="scramble"></div>
-  <div class="timer" id="timer">0.00</div>
-  <div class="controls" id="manualControls" style="display:none;">
-    <input id="manualInput" placeholder="1234" autocomplete="off">
+    <div class="icon-btn settings-icon" onclick="toggleSettings()" title="Settings">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"></circle>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+      </svg>
+    </div>
   </div>
-  <div class="controls">
-    <button onclick="addPenalty()">+2</button>
-    <button onclick="setDNF()">DNF</button>
-    <button onclick="resetSession()">Reset Current</button>
-    <button onclick="saveAll()">Save All</button>
+
+  <div class="toolbar draggable" id="modePanel">
+    
+    <div class="select-group" title="Select Session">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+      <select id="sessionSelect" class="custom-select"></select>
+    </div>
+
+    <div class="select-group" title="Select Event">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+      <select id="puzzleTypeSelect" class="custom-select" onchange="newScramble()">
+        <option value="3x3">3x3 Cube</option>
+        <option value="2x2">2x2 Cube</option>
+        <option value="4x4">4x4 Cube</option>
+        <option value="megaminx">Megaminx</option>
+        <option value="skewb">Skewb</option>
+      </select>
+    </div>
+
+    <div class="segmented-control">
+      <button class="segment-btn active" id="btnTimerMode" onclick="setMode('timer')">Timer</button>
+      <button class="segment-btn" id="btnManualMode" onclick="setMode('manual')">Input</button>
+      <button class="segment-btn locked-btn" id="btnBattleMode" onclick="setMode('battle')">Battle 🔒</button>
+    </div>
+    
+    <div class="resize-handle"></div>
   </div>
-  <div class="background-controls">
-    <input type="file" accept="image/*" onchange="setBackground(event)">
-    <button onclick="clearBackground()">Reset BG</button>
+
+  <div class="draggable" id="settingsPanel" style="top: 60px; right: 60px;">
+    <h3>Settings</h3>
+    
+    <div class="version-switch">
+        <div class="v-opt active" id="optStandard" onclick="toggleVersion('standard')">Standard</div>
+        <div class="v-opt" id="optPlus" onclick="toggleVersion('plus')">PLUS</div>
+    </div>
+
+    <label>
+      Theme:
+      <select id="themeSelect">
+        <option value="wca">WCA Dark (Default)</option>
+        <option value="wca_glass">WCA Glass (Pop)</option>
+        <option value="liquid">Liquid Glass 2.0</option>
+        <option value="google">Google</option>
+        <option value="neon">Neon</option>
+        <option value="dracula">Dracula</option>
+        <option value="minimal">Minimal</option>
+        <option value="solarized">Solarized</option>
+        <option value="light">Light Mode</option>
+        <option value="cyberpunk">Cyberpunk</option>
+      </select>
+    </label>
+    <hr style="width:100%; border:0; border-top:1px solid rgba(255,255,255,0.2);">
+    <label>Timer Color: <input type="color" id="timerColor" value="#00e5ff"></label>
+    <label>Recent Solve: <input type="color" id="recentColor" value="#00ff00"></label>
+    <label>Chart Line: <input type="color" id="chartColorPicker" value="#00e5ff"></label>
+    <label>+2 Solve: <input type="color" id="plus2Color" value="#ffa500"></label>
+    <label>DNF Solve: <input type="color" id="dnfColor" value="#ff0000"></label>
+    <hr style="width:100%; border:0; border-top:1px solid rgba(255,255,255,0.2);">
+    <label>Tile Style:
+      <select id="tileStyleSelect">
+        <option value="default">Default</option>
+        <option value="solid">Solid Color</option>
+        <option value="custom">Custom Colors</option>
+      </select>
+    </label>
+    <label id="solidColorLabel" style="display:none;">
+      Tile BG Color: <input type="color" id="solidTileColor" value="#333333">
+    </label>
+    <button onclick="toggleSettings()" style="margin-top:10px; width:100%;">Close</button>
+    <div class="resize-handle"></div>
   </div>
-  <div class="resize-handle"></div>
+
+  <div class="scramble-panel draggable" id="scramblePanel">
+    <div class="scramble" id="scramble"></div>
+    <div class="resize-handle"></div>
+  </div>
+
+  <div class="visual-panel draggable" id="visualPanel">
+    <twisty-player id="twistyPlayer" puzzle="3x3x3" visualization="2D" background="none" control-panel="none"></twisty-player>
+    <div class="resize-handle"></div>
+  </div>
+
+  <div class="draggable" id="leftPanel">
+    
+    <div class="timer-wrapper" id="timerWrapper">
+      <div class="timer" id="timer">0.00</div>
+      <input id="manualInput" class="manual-input" placeholder="Type Time..." autocomplete="off">
+      <div class="timer-ao5" id="ao5Below">ao5: -</div>
+    </div>
+    
+    <div id="battlePanel">
+        <div class="battle-result" id="battleResult">
+            <div class="battle-result-text" id="battleResText">WINNER</div>
+            <div class="battle-result-sub" id="battleResSub">+30 XP</div>
+        </div>
+        
+        <div class="battle-header">
+            <span>Race to Finish</span>
+            <div style="display:flex; align-items:center;">
+                <span class="vs-badge">VS CUBEBOT</span>
+                <span id="gapIndicator" class="battle-gap"></span>
+            </div>
+        </div>
+        
+        <div class="racer-row">
+            <div class="racer-info">
+                <span>YOU</span>
+                <span id="userBattleTime">0.00</span>
+            </div>
+            <div class="progress-track">
+                <div class="progress-fill user-fill" id="userBattleBar"></div>
+            </div>
+        </div>
+        
+        <div class="racer-row">
+            <div class="racer-info">
+                <span style="color:var(--bot-color);">CUBEBOT</span>
+                <span id="botBattleTime">0.00</span>
+            </div>
+            <div class="progress-track">
+                <div class="progress-fill bot-fill" id="botBattleBar"></div>
+            </div>
+        </div>
+        <div style="font-size:0.8rem; color:#888; text-align:center; margin-top:5px;">
+            Target: <span id="botTargetTime">--</span>s | Streak: <span id="winStreakVal">0</span>
+        </div>
+    </div>
+
+    <div class="controls">
+      <button onclick="addPenalty()">+2</button>
+      <button onclick="setDNF()">DNF</button>
+      <button onclick="resetSession()">Reset Current</button>
+      
+      <label style="display:inline-block; cursor:pointer;">
+        <input type="file" accept=".csv" onchange="importCSV(event)" hidden>
+        <span style="padding:10px 18px; border:1px solid var(--accent); border-radius:8px; background:var(--panel); color:white;">
+          Import CSV
+        </span>
+      </label>
+      <button onclick="exportCSV()">Export CSV</button>
+    </div>
+
+    <div class="background-controls">
+      <input type="file" id="hiddenBgInput" accept="image/*" onchange="setBackground(event)" style="display:none;">
+      <input type="color" id="bgColorPicker" title="Solid background">
+      <button onclick="clearBackground()">Reset BG</button>
+    </div>
+    <div class="resize-handle"></div>
+  </div>
+
+  <div class="draggable" id="rightPanel">
+    
+    <div class="stats-dashboard" id="statsPanel">
+      <div class="stat-header">
+        <div class="stat-header-title">Total Solves</div>
+        <div class="stat-header-val" id="count">0</div>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">ao5</div>
+          <div class="stat-value highlight" id="ao5">-</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">ao12</div>
+          <div class="stat-value highlight" id="ao12">-</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Best</div>
+          <div class="stat-value" id="best">-</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Worst</div>
+          <div class="stat-value" id="worst">-</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">BPA</div>
+          <div class="stat-value" id="bpa">-</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">WPA</div>
+          <div class="stat-value" id="wpa">-</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-container">
+      <canvas id="trendChart"></canvas>
+    </div>
+    
+    <div class="solves" id="solves">
+      <div class="solves-header">
+         <span class="col-id">#</span>
+         <span class="col-time">Time</span>
+         <span class="col-ao5">ao5</span>
+         <span class="col-icon"></span>
+      </div>
+      <div id="solvesListContainer"></div>
+    </div>
+    <div class="resize-handle"></div>
+  </div>
+
 </div>
 
-<!-- Right Panel -->
-<div class="right-panel draggable" id="rightPanel">
-  <div class="stats" id="statsPanel">
-    <div>Solves: <span id="count">0</span></div>
-    <div>ao5: <span id="ao5">-</span></div>
-    <div>ao12: <span id="ao12">-</span></div>
-    <div>Best: <span id="best">-</span></div>
-    <div>Worst: <span id="worst">-</span></div>
+<div id="pbNotification" class="pb-notification">
+  <div class="pb-text">New PB!</div>
+  <div class="pb-sub" id="pbTimeText">0.00</div>
+  <div style="font-size:0.9rem; color:#ccc; margin-top:5px;">Congrats! 🎉</div>
+</div>
+
+<div id="levelNotification" class="pb-notification" style="border-color: #ff00ff; box-shadow: 0 0 30px #ff00ff;">
+  <div class="pb-text" style="color:#ff00ff; font-size:2.5rem;">LEVEL UP!</div>
+  <div class="pb-sub" id="levelText">Level 2</div>
+</div>
+
+<div id="achievementNotification" class="pb-notification achievement-notif">
+    <div class="achievement-title">ACHIEVEMENT!</div>
+    <div class="pb-sub" id="achievementText" style="color:white; font-size:1.5rem;">Beginner</div>
+</div>
+
+<div id="solveModal" class="modal-overlay" onclick="if(event.target === this) closeSolveModal()">
+  <div class="modal-content">
+    <h3 style="margin-top:0;">Solve Details</h3>
+    <div id="modalTime" class="modal-time">0.00</div>
+    <div id="modalScramble" class="modal-scramble"></div>
+    
+    <div class="modal-actions">
+      <button id="modalBtnPlus2" onclick="toggleModalPlus2()">+2</button>
+      <button id="modalBtnDNF" onclick="toggleModalDNF()">DNF</button>
+      <button class="delete-btn" onclick="deleteModalSolve()">Delete</button>
+    </div>
+    
+    <textarea id="modalComment" class="modal-comment" placeholder="Add a comment... (e.g. 'PLL Skip')" oninput="updateModalComment()"></textarea>
+    
+    <button onclick="closeSolveModal()" style="width:100%">Close</button>
   </div>
-  <div class="solves" id="solves"></div>
-  <canvas id="trendChart"></canvas>
-  <div class="resize-handle"></div>
 </div>
 
+<div id="authModal" class="modal-overlay" onclick="if(event.target === this) toggleAuthModal()">
+    <div class="modal-content profile-dashboard">
+      
+      <div id="loggedInView" style="display:none;">
+         <div class="profile-header">
+            <div class="profile-avatar" id="pAvatar">U</div>
+            <div class="profile-info">
+               <div class="profile-name">
+                 <span id="pName">User</span>
+                 <span id="pBadge" class="account-badge"></span>
+               </div>
+               <div class="profile-level" id="pLevel">Level 1 - 0 XP</div>
+            </div>
+            <button class="delete-btn" style="padding: 5px 10px; font-size: 0.8rem;" onclick="handleLogout()">Log Out</button>
+         </div>
+         
+         <div class="profile-tabs">
+            <button class="p-tab active" onclick="setTab(0)">Overview</button>
+            <button class="p-tab" onclick="setTab(1)">Badges</button>
+         </div>
+         
+         <div class="p-content active" id="tabOverview">
+            <div class="p-stats-grid">
+               <div class="p-stat-box">
+                  <div class="p-stat-label">Total Solves</div>
+                  <div class="p-stat-val" id="statTotalSolves">0</div>
+               </div>
+               <div class="p-stat-box">
+                  <div class="p-stat-label">Global Best</div>
+                  <div class="p-stat-val" id="statGlobalPB" style="color:var(--recent-solve)">-</div>
+               </div>
+               <div class="p-stat-box">
+                   <div class="p-stat-label">Total Playtime</div>
+                   <div class="p-stat-val" id="statPlaytime">0h 0m</div>
+               </div>
+               <div class="p-stat-box">
+                   <div class="p-stat-label">Badges Unlocked</div>
+                   <div class="p-stat-val" id="statBadgesCount">0 / 20</div>
+               </div>
+            </div>
+         </div>
+         
+         <div class="p-content" id="tabBadges">
+            <div class="badges-grid" id="badgesGrid">
+               </div>
+         </div>
+      </div>
+
+      <div id="loggedOutView">
+          <h3 style="margin-top:20px;">CubeLearn Account</h3>
+          <div class="tab-btns" style="padding:0 20px;">
+              <button class="tab-btn active" id="tabLogin" onclick="switchAuthTab('login')">Login</button>
+              <button class="tab-btn" id="tabRegister" onclick="switchAuthTab('register')">Register</button>
+          </div>
+          
+          <div class="login-form">
+              <input type="text" id="usernameInput" placeholder="Username">
+              <input type="password" id="passwordInput" placeholder="Password" style="margin-top:10px;">
+              
+              <div id="registerOptions" style="display:none; text-align:left; margin-top:10px;">
+                  <label style="display:block; margin-bottom:5px; font-size:0.9rem; color:#aaa;">Account Type:</label>
+                  <select id="regAccountType" style="width:100%; text-align:left;">
+                      <option value="standard">Standard (Free)</option>
+                      <option value="premium">Premium (Unlock Battle Mode)</option>
+                  </select>
+                  <div style="font-size:0.75rem; color:#888; margin-top:5px; font-style:italic;">
+                      * Premium unlocks Battle Mode. Standard users can still customize themes.
+                  </div>
+              </div>
+
+              <button onclick="handleAuth()" id="authSubmitBtn" style="background:var(--accent); color:black; font-weight:bold; margin-top:15px; width:100%;">Login</button>
+          </div>
+          <p style="font-size:0.8rem; color:#888;">Note: This is a local account system. Your data is saved to this browser.</p>
+      </div>
+    </div>
 </div>
 
-<div class="footer">
-  <div>v1.2.1</div>
+<div id="contextMenu" class="context-menu">
+  <div class="menu-item" onclick="toggleSettings()">Open Settings</div>
+  <div class="menu-item" onclick="triggerBgUpload()">Change Background Image</div>
+  <div class="menu-item" onclick="toggleEditMode()">Toggle Edit Mode</div>
 </div>
+
+<div class="footer"><div>v2.1 (Enhanced Ultimate)</div></div>
 
 <script>
+  
+  /* ---------- UTILS ---------- */
+  function getRand(min, max) { return Math.floor(Math.random() * (max - min)) + min; }
+  function format(seconds) { return (Math.floor(seconds * 100) / 100).toFixed(2); }
+
+  /* ---------- SCRAMBLE GEN ---------- */
+  const validPairs = { "R": 0, "L": 0, "U": 1, "D": 1, "F": 2, "B": 2, "Rw":0, "Lw":0, "Uw":1, "Dw":1, "Fw":2, "Bw":2 };
+  const moves333 = ["R", "L", "U", "D", "F", "B"];
+  const moves444 = ["R", "L", "U", "D", "F", "B", "Rw", "Lw", "Uw", "Dw", "Fw", "Bw"];
+  const mods = ["", "'", "2"];
+
+  function generateSmartScramble(moveset, length) {
+    let scramble = [];
+    let lastAxis = -1;
+    let secondLastAxis = -1;
+    while (scramble.length < length) {
+      const move = moveset[getRand(0, moveset.length)];
+      const axis = validPairs[move];
+      if (axis === lastAxis) continue;
+      if (axis === secondLastAxis && lastAxis === axis) continue; 
+      const mod = mods[getRand(0, mods.length)];
+      scramble.push(move + mod);
+      secondLastAxis = lastAxis;
+      lastAxis = axis;
+    }
+    return scramble.join(" ");
+  }
+  function generateMegaminx() {
+    let s = [];
+    for (let i = 0; i < 7; i++) { 
+      for (let j = 0; j < 10; j++) {
+        let move = j % 2 === 0 ? "R" : "D";
+        let mod = Math.random() > 0.5 ? "++" : "--";
+        s.push(move + mod);
+      }
+      s.push("U" + (Math.random() > 0.5 ? "'" : "") + "<br>"); 
+    }
+    return s.join(" ");
+  }
+  function generateSkewb() {
+    const moves = ["R", "L", "U", "B"];
+    const mods = ["", "'"];
+    let s = []; let last = "";
+    while(s.length < 10) {
+      let m = moves[getRand(0, moves.length)];
+      if(m === last) continue;
+      last = m;
+      s.push(m + mods[getRand(0, mods.length)]);
+    }
+    return s.join(" ");
+  }
+
+  /* ---------- THEMES ---------- */
+  const themes = {
+    wca: { accent: "#00e5ff", bg: "linear-gradient(135deg, #0f1115, #161a22)", panel: "rgba(0,0,0,0.65)", text: "#ffffff", chart: "#00e5ff", border: "none", backdrop: "none", shadow: "none", radius: "8px", bgSize: "100% 100%", bgAnim: "none" },
+    wca_glass: { accent: "#00e5ff", bg: "linear-gradient(135deg, #0f1115, #161a22)", panel: "rgba(20, 25, 35, 0.65)", text: "#ffffff", chart: "#00e5ff", border: "1px solid rgba(0, 229, 255, 0.2)", backdrop: "blur(15px)", shadow: "0 10px 30px rgba(0,0,0,0.5)", radius: "16px", bgSize: "100% 100%", bgAnim: "none" },
+    liquid: { accent: "#00f2ff", bg: "linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab)", panel: "rgba(255, 255, 255, 0.1)", text: "#ffffff", chart: "rgba(255,255,255,0.8)", border: "1px solid rgba(255, 255, 255, 0.3)", backdrop: "blur(25px) saturate(180%)", shadow: "0 8px 32px 0 rgba(0, 0, 0, 0.3)", radius: "16px", bgSize: "400% 400%", bgAnim: "liquidGradient 15s ease infinite" },
+    google: { accent: "#4285F4", bg: "#f8f9fa", panel: "rgba(255,255,255,0.95)", text: "#202124", chart: "#EA4335", border: "1px solid #ddd", backdrop: "none", shadow: "0 2px 10px rgba(0,0,0,0.1)", radius: "8px", bgSize: "100%", bgAnim: "none" },
+    neon: { accent: "#39ff14", bg: "linear-gradient(135deg, #000000, #0a0a0a)", panel: "rgba(20,20,20,0.9)", text: "#39ff14", chart: "#ff00ff", border: "1px solid #39ff14", backdrop: "none", shadow: "0 0 15px #39ff14", radius: "8px", bgSize: "100%", bgAnim: "none" },
+    minimal: { accent: "#ffffff", bg: "linear-gradient(135deg, #1c1c1c, #1c1c1c)", panel: "rgba(255,255,255,0.05)", text: "#ffffff", chart: "#aaaaaa", border: "none", backdrop: "none", shadow: "none", radius: "8px", bgSize: "100%", bgAnim: "none" },
+    light: { accent: "#0066ff", bg: "#f2f2f2", panel: "rgba(255,255,255,0.95)", text: "#000000", chart: "#0066ff", border: "1px solid #ccc", backdrop: "none", shadow: "0 2px 5px rgba(0,0,0,0.1)", radius: "8px", bgSize: "100%", bgAnim: "none" },
+    cyberpunk: { accent: "#ff00ff", bg: "linear-gradient(135deg, #0b0014, #14001f)", panel: "rgba(30,0,40,0.85)", text: "#00ffff", chart: "#ffff00", border: "1px solid #ff00ff", backdrop: "none", shadow: "0 0 10px #ff00ff", radius: "8px", bgSize: "100%", bgAnim: "none" },
+    dracula: { accent: "#ff79c6", bg: "#282a36", panel: "rgba(68, 71, 90, 0.9)", text: "#f8f8f2", chart: "#8be9fd", border: "1px solid #6272a4", backdrop: "none", shadow: "0 4px 10px rgba(0,0,0,0.3)", radius: "8px", bgSize: "100%", bgAnim: "none" },
+    solarized: { accent: "#b58900", bg: "#002b36", panel: "rgba(7, 54, 66, 0.9)", text: "#839496", chart: "#2aa198", border: "1px solid #586e75", backdrop: "none", shadow: "none", radius: "8px", bgSize: "100%", bgAnim: "none" }
+  };
+  function hexToRgb(hex) {
+    let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? { r: parseInt(result[1], 16), g: parseInt(result[2], 16), b: parseInt(result[3], 16) } : null;
+  }
+  function applyTheme(themeName) {
+    // If we are in PLUS mode, don't let standard themes override the CSS variables unless needed
+    if(appVersion === 'plus') return; 
+
+    const t = themes[themeName] || themes.wca;
+    const r = document.documentElement.style;
+    r.setProperty("--accent", t.accent); r.setProperty("--bg", t.bg); r.setProperty("--panel", t.panel); r.setProperty("--text", t.text); r.setProperty("--chart-line", t.chart);
+    r.setProperty("--panel-border", t.border); r.setProperty("--panel-backdrop", t.backdrop); r.setProperty("--panel-shadow", t.shadow); r.setProperty("--panel-radius", t.radius); r.setProperty("--bg-size", t.bgSize); r.setProperty("--bg-animation", t.bgAnim);
+    document.getElementById("timerColor").value = t.accent;
+    document.getElementById("chartColorPicker").value = t.chart;
+    if(chart) {
+      chart.data.datasets[0].borderColor = t.chart;
+      const ctx = document.getElementById('trendChart').getContext('2d');
+      const rgb = hexToRgb(t.chart) || {r:0, g:229, b:255};
+      let gradient = ctx.createLinearGradient(0, 0, 0, 200);
+      gradient.addColorStop(0, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.5)`);
+      gradient.addColorStop(1, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0)`);
+      chart.data.datasets[0].backgroundColor = gradient;
+      chart.update();
+    }
+    saveAll();
+  }
+
+/* ---------- ANTI-CHEAT LOGIC ---------- */
+const CHEAT_THRESHOLDS = {
+    "3x3": 2.5,   
+    "2x2": 0.3,   
+    "4x4": 15.0,  
+    "megaminx": 25.0,
+    "skewb": 0.8
+};
+
+let probationSolveRef = null;
+
+// The Warning (Corner Toast)
+function triggerWarning() {
+    const alertBox = document.getElementById("probationAlert");
+    alertBox.classList.add("show");
+}
+function closeWarning() {
+    const alertBox = document.getElementById("probationAlert");
+    alertBox.classList.remove("show");
+}
+
+// The Ban Hammer (Wipes Data)
+function triggerBan(reason) {
+    document.getElementById("banOverlay").style.display = "flex";
+    document.getElementById("banReasonText").textContent = reason;
+    
+    // WIPE DATA
+    if(currentUser) {
+        localStorage.removeItem("cubeLearnPro_user_" + currentUser);
+    }
+    localStorage.removeItem("cubeLearnPro_v2"); 
+    
+    // Reset runtime state
+    solveList = [];
+    sessions = {};
+    userXP = 0;
+    currentUser = null;
+    
+    // Stop everything
+    timerMode = false; battleMode = false; running = false; clearInterval(interval);
+}
+
 /* ---------- STATE ---------- */
 let timerMode=true, running=false, readyToStart=false, startTime=0, interval;
 let sessions={}, currentSession="1";
 let solveList=[], currentIndex=-1;
 let backgroundData=null;
 let editMode=false;
+let selectedSolveIndex = -1; 
+let currentUser = null; 
+let userXP = 0;
+let userLevel = 1;
+let userAchievements = []; 
+let userAccountType = "standard"; // 'standard' or 'premium'
+let appVersion = "standard"; // 'standard' or 'plus'
 
-/* ---------- DOM ---------- */
+/* ---------- VERSION SWITCHING LOGIC ---------- */
+function toggleVersion(version) {
+    appVersion = version;
+    const body = document.body;
+    const sBtn = document.getElementById('optStandard');
+    const pBtn = document.getElementById('optPlus');
+    
+    if (version === 'plus') {
+        body.classList.add('plus-mode');
+        sBtn.classList.remove('active');
+        pBtn.classList.add('active');
+        // Auto-Unlock Battle Mode
+        userAccountType = 'premium';
+    } else {
+        body.classList.remove('plus-mode');
+        pBtn.classList.remove('active');
+        sBtn.classList.add('active');
+        // Revert to theme default
+        const currentTheme = document.getElementById('themeSelect').value;
+        applyTheme(currentTheme);
+        // Revert account (unless genuinely premium logged in, but for this demo, revert)
+        userAccountType = 'standard';
+    }
+    
+    updateXPUI(); // Updates the lock icon
+    saveAll();
+}
+
+/* ---------- BATTLE MODE STATE ---------- */
+let battleMode = false;
+let botTarget = 0;
+let battleActive = false;
+let botStartTime = 0;
+let winStreak = 0; // Runtime win streak
+
+/* ---------- ACHIEVEMENT DEFINITIONS ---------- */
+const ACHIEVEMENTS = [
+    { id: 'first_solve', name: 'First Steps', desc: 'Complete your first solve', icon: '👶' },
+    { id: 'solve_50', name: 'Getting Serious', desc: 'Complete 50 solves', icon: '🔥' },
+    { id: 'solve_100', name: 'Century Club', desc: 'Complete 100 solves', icon: '💯' },
+    { id: 'solve_500', name: 'Dedicated', desc: 'Complete 500 solves', icon: '🏆' },
+    { id: 'solve_1000', name: 'Master', desc: 'Complete 1000 solves', icon: '👑' },
+    
+    { id: 'sub_60', name: 'Minute Man', desc: 'Get a sub-1 minute single', icon: '⏱️' },
+    { id: 'sub_30', name: 'Speeding Up', desc: 'Get a sub-30s single', icon: '🚀' },
+    { id: 'sub_20', name: 'Sub-20', desc: 'Get a sub-20s single', icon: '⚡' },
+    { id: 'sub_10', name: 'World Class', desc: 'Get a sub-10s single', icon: '👽' },
+    
+    { id: 'streak_10', name: 'Warming Up', desc: 'Do 10 solves in one session', icon: '👟' },
+    { id: 'streak_50', name: 'Marathon', desc: 'Do 50 solves in one session', icon: '🏃' },
+    { id: 'streak_100', name: 'Ultra Marathon', desc: 'Do 100 solves in one session', icon: '🏋️' }
+];
+
+/* ---------- CHECK ACHIEVEMENTS ---------- */
+function checkAchievements(time) {
+    if(!currentUser) return;
+    let globalSolves = 0;
+    Object.values(sessions).forEach(arr => globalSolves += arr.length);
+    const unlocked = [];
+    if(globalSolves >= 1) unlocked.push('first_solve');
+    if(globalSolves >= 50) unlocked.push('solve_50');
+    if(globalSolves >= 100) unlocked.push('solve_100');
+    if(globalSolves >= 500) unlocked.push('solve_500');
+    if(globalSolves >= 1000) unlocked.push('solve_1000');
+    if(time < 60) unlocked.push('sub_60');
+    if(time < 30) unlocked.push('sub_30');
+    if(time < 20) unlocked.push('sub_20');
+    if(time < 10) unlocked.push('sub_10');
+    if(solveList.length >= 10) unlocked.push('streak_10');
+    if(solveList.length >= 50) unlocked.push('streak_50');
+    if(solveList.length >= 100) unlocked.push('streak_100');
+    unlocked.forEach(id => {
+        if(!userAchievements.includes(id)) {
+            userAchievements.push(id);
+            triggerAchievement(ACHIEVEMENTS.find(a => a.id === id));
+        }
+    });
+    saveAccountData();
+}
+
+function triggerAchievement(ach) {
+    if(!ach) return;
+    const notif = document.getElementById("achievementNotification");
+    document.getElementById("achievementText").textContent = ach.name;
+    notif.classList.add('show');
+    confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#FFD700', '#FFA500'] });
+    setTimeout(() => { notif.classList.remove('show'); }, 4000);
+}
+
+/* ---------- DOM REFERENCES ---------- */
 const timerEl=document.getElementById("timer");
+const timerWrapper=document.getElementById("timerWrapper"); 
 const scrambleEl=document.getElementById("scramble");
-const solvesDiv=document.getElementById("solves");
+const twistyPlayer=document.getElementById("twistyPlayer");
+const solvesDiv=document.getElementById("solvesListContainer");
 const countEl=document.getElementById("count");
 const ao5El=document.getElementById("ao5");
 const ao12El=document.getElementById("ao12");
+const bpaEl=document.getElementById("bpa");
+const wpaEl=document.getElementById("wpa");
 const bestEl=document.getElementById("best");
 const worstEl=document.getElementById("worst");
-const manualControls=document.getElementById("manualControls");
 const manualInput=document.getElementById("manualInput");
 const sessionSelect=document.getElementById("sessionSelect");
 const puzzleTypeSelect=document.getElementById("puzzleTypeSelect");
-const modeBtn=document.getElementById("modeBtn");
+const bgColorPicker=document.getElementById("bgColorPicker");
+const tileStyleSelect=document.getElementById("tileStyleSelect");
+const solidColorInput=document.getElementById("solidTileColor");
+const themeSelect=document.getElementById("themeSelect");
+const panels=document.querySelectorAll(".draggable");
+const contextMenu = document.getElementById("contextMenu");
+const settingsPanel = document.getElementById("settingsPanel");
+const pbNotification = document.getElementById("pbNotification");
+const pbTimeText = document.getElementById("pbTimeText");
+const solveModal = document.getElementById("solveModal");
+const modalTime = document.getElementById("modalTime");
+const modalScramble = document.getElementById("modalScramble");
+const modalComment = document.getElementById("modalComment");
+const modalBtnPlus2 = document.getElementById("modalBtnPlus2");
+const modalBtnDNF = document.getElementById("modalBtnDNF");
+// Mode Buttons
+const btnTimerMode = document.getElementById("btnTimerMode");
+const btnManualMode = document.getElementById("btnManualMode");
+const btnBattleMode = document.getElementById("btnBattleMode");
+// Battle Elements
+const battlePanel = document.getElementById("battlePanel");
+const userBattleBar = document.getElementById("userBattleBar");
+const botBattleBar = document.getElementById("botBattleBar");
+const userBattleTime = document.getElementById("userBattleTime");
+const botBattleTime = document.getElementById("botBattleTime");
+const botTargetTime = document.getElementById("botTargetTime");
+const battleResult = document.getElementById("battleResult");
+const gapIndicator = document.getElementById("gapIndicator");
+const winStreakVal = document.getElementById("winStreakVal");
 
-const tileStyleSelect = document.getElementById("tileStyleSelect");
-const solidColorInput = document.getElementById("solidTileColor");
-const solidColorLabel = document.getElementById("solidColorLabel");
-const panels = document.querySelectorAll(".draggable");
-
-/* ---------- TREND CHART ---------- */
+/* ---------- CHART ---------- */
 const ctx=document.getElementById('trendChart').getContext('2d');
+let gradient = ctx.createLinearGradient(0, 0, 0, 200);
+gradient.addColorStop(0, 'rgba(0, 229, 255, 0.5)');
+gradient.addColorStop(1, 'rgba(0, 229, 255, 0)');
 let chart=new Chart(ctx,{
   type:'line',
-  data:{labels:[],datasets:[{label:'Time (s)',data:[],borderColor:'cyan',backgroundColor:'transparent'}]},
-  options:{scales:{y:{beginAtZero:true}}}
+  data:{ labels:[], datasets:[{ label:'Time (s)', data:[], borderColor: '#00e5ff', backgroundColor: gradient, fill: true, tension: 0.3, pointRadius: 0, pointHoverRadius: 5 }] },
+  options:{ maintainAspectRatio: false, scales:{ y:{ beginAtZero:true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#666', font: { size: 10 } } }, x:{display:false} }, plugins: { legend: { display: false } }, interaction: { mode: 'index', intersect: false } }
 });
 
-/* ---------- SCRAMBLE ---------- */
-const movesDict={"2x2":["R","L","U","D","F","B"],"3x3":["R","L","U","D","F","B"],"4x4":["R","L","U","D","F","B","Rw","Lw","Uw","Dw","Fw","Bw"],"megaminx":["R","D","U","L","B"],"skewb":["R","L","U","B"]};
-const mods=["","'","2"];
+/* ---------- LOGIC ---------- */
+const twistyPuzzleMap = { "2x2": "2x2x2", "3x3": "3x3x3", "4x4": "4x4x4", "megaminx": "megaminx", "skewb": "skewb" };
+
 function newScramble(){
-  let moves=movesDict[puzzleTypeSelect.value]||movesDict["3x3"];
-  let s=[], last="";
-  while(s.length<20){ let m=moves[Math.floor(Math.random()*moves.length)]; if(m===last) continue; last=m; s.push(m+mods[Math.floor(Math.random()*3)]);}
-  scrambleEl.textContent=s.join(" ");
+  const type = puzzleTypeSelect.value;
+  let scrambleString = "";
+  if(type === "3x3") scrambleString = generateSmartScramble(moves333, 20);
+  else if (type === "2x2") scrambleString = generateSmartScramble(moves333, 10);
+  else if (type === "4x4") scrambleString = generateSmartScramble(moves444, 40);
+  else if (type === "megaminx") scrambleString = generateMegaminx();
+  else if (type === "skewb") scrambleString = generateSkewb();
+  
+  scrambleEl.innerHTML = scrambleString; 
+  if(twistyPlayer) {
+    const vizScramble = scrambleString.replace(/<br>/g, " ");
+    twistyPlayer.setAttribute("puzzle", twistyPuzzleMap[type] || "3x3x3");
+    twistyPlayer.setAttribute("alg", vizScramble);
+  }
 }
-newScramble();
 
-/* ---------- FORMAT ---------- */
-function format(ms){ return ms.toFixed(2); }
+/* ========================================= */
+/* TOUCH LOGIC FOR MOBILE */
+/* ========================================= */
+timerWrapper.addEventListener("touchstart", handleTouchStart, { passive: false });
+timerWrapper.addEventListener("touchend", handleTouchEnd, { passive: false });
+timerWrapper.addEventListener("touchcancel", handleTouchEnd, { passive: false });
 
-/* ---------- TIMER ---------- */
-document.addEventListener("keydown", e=>{
-  if(timerMode && e.code==="Space"){
+function handleTouchStart(e) {
+    if (!timerMode && !battleMode) return;
+    if (e.target.tagName === "INPUT") return;
+    if (running) {
+        e.preventDefault(); 
+        stopTimer();
+        return;
+    }
     e.preventDefault();
-    if(!running && !readyToStart){ readyToStart=true; timerEl.style.color="yellow"; } 
-    else if(running){ stopTimer(); }
+    readyToStart = true;
+    timerWrapper.classList.add("ready");
+}
+
+function handleTouchEnd(e) {
+    if (!timerMode && !battleMode) return;
+    if (readyToStart) {
+        readyToStart = false;
+        timerWrapper.classList.remove("ready");
+        timerWrapper.classList.add("running");
+        startTimer();
+    }
+}
+
+// 3D TILT EFFECT FOR PLUS MODE
+document.addEventListener("mousemove", (e) => {
+    if (appVersion !== 'plus') return;
+    
+    // Simple logic: tilt elements slightly based on mouse position relative to center
+    // Only apply if mouse is interacting with a specific panel to save performance
+    // OR: just global tilt? Let's do simple hover tilt.
+    const hovered = e.target.closest('.draggable');
+    if(hovered) {
+        const rect = hovered.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const xPct = (x / rect.width) - 0.5;
+        const yPct = (y / rect.height) - 0.5;
+        // Limit tilt
+        hovered.style.transform = `perspective(1000px) rotateY(${xPct * 5}deg) rotateX(${-yPct * 5}deg)`;
+    }
+});
+// Reset tilt on mouseout
+document.addEventListener("mouseout", (e) => {
+    if(e.target.classList && e.target.classList.contains('draggable')) {
+        e.target.style.transform = 'none';
+    }
+});
+
+
+// Keep Keyboard Logic for Desktop
+document.addEventListener("keydown", e=>{
+  if (e.key === "Enter") {
+    if (document.activeElement !== manualInput && document.activeElement !== modalComment && document.getElementById("authModal").style.display !== "flex") {
+      if (manualInput.value === "") { newScramble(); manualInput.blur(); }
+    }
+  }
+  if((timerMode || battleMode) && e.code==="Space"){
+    if (document.activeElement === modalComment || document.activeElement.tagName === "INPUT") return;
+    e.preventDefault();
+    if(!running && !readyToStart){
+      readyToStart=true; timerWrapper.classList.add("ready");
+    } else if(running){ stopTimer(); }
+  }
+  if (e.ctrlKey && !e.shiftKey && !e.altKey) {
+    switch (e.key.toLowerCase()) {
+      case "2": e.preventDefault(); addPenalty(); break;
+      case "d": e.preventDefault(); setDNF(); break;
+      case "r": e.preventDefault(); resetSession(); break;
+      case "z": 
+        e.preventDefault();
+        if(solveList.length > 0) {
+            solveList.pop(); currentIndex = solveList.length - 1; sessions[currentSession] = solveList; updateUI();
+        }
+        break;
+    }
   }
 });
+
 document.addEventListener("keyup", e=>{
-  if(timerMode && e.code==="Space" && readyToStart){
-    readyToStart=false; 
-    timerEl.style.color=getComputedStyle(document.documentElement).getPropertyValue("--accent");
-    startTimer();
+  if((timerMode || battleMode) && e.code==="Space" && readyToStart){
+    readyToStart=false; timerWrapper.classList.remove("ready"); timerWrapper.classList.add("running"); startTimer();
   }
 });
-function startTimer(){ running=true; startTime=performance.now(); interval=setInterval(()=>{ timerEl.textContent=format((performance.now()-startTime)/1000); },10); }
-function stopTimer(){ running=false; clearInterval(interval); addSolve((performance.now()-startTime)/1000); }
 
-/* ---------- MANUAL INPUT ---------- */
+function parseTimeStr(str) {
+    if (!str || str === "-" || str === "DNF") return null;
+    return parseFloat(str);
+}
+
+function startTimer(){
+  running=true; startTime=performance.now();
+  
+  // FOCUS MODE TRIGGER (Plus Mode)
+  if(appVersion === 'plus') {
+      document.body.classList.add('focus-active');
+  }
+  
+  // Battle Logic Start
+  if(battleMode) {
+      battleActive = true;
+      battleResult.style.display = "none";
+      userBattleBar.style.width = "0%";
+      botBattleBar.style.width = "0%";
+      userBattleTime.textContent = "0.00";
+      botBattleTime.textContent = "0.00";
+      gapIndicator.textContent = "";
+      
+      let baseTime = 30.0; 
+      let a5 = parseTimeStr(ao5El.textContent);
+      
+      // Smart Difficulty: Use best recent average or session average
+      if (a5 && a5 > 0) baseTime = a5;
+      else {
+          const valid = solveList.filter(s => !s.dnf);
+          if (valid.length > 0) {
+              const sum = valid.reduce((acc, s) => acc + s.time + s.penalty, 0);
+              baseTime = sum / valid.length;
+          } else {
+              if (currentUser) {
+                 let gSum = 0, gCount = 0;
+                 Object.values(sessions).forEach(sess => {
+                     sess.forEach(s => {
+                         if (!s.dnf) { gSum += s.time + s.penalty; gCount++; }
+                     });
+                 });
+                 if (gCount > 0) baseTime = gSum / gCount;
+              }
+          }
+      }
+      
+      // Difficulty Multiplier based on Win Streak
+      // If win streak > 3, bot gets 5% faster
+      let difficultyMod = 1.0;
+      if (winStreak > 2) difficultyMod = 0.95;
+      if (winStreak > 5) difficultyMod = 0.90;
+      
+      let variance = (Math.random() * 0.2) + 0.9; // Bot is 90% to 110% of your speed
+      botTarget = (baseTime * variance * difficultyMod).toFixed(2);
+      botTargetTime.textContent = botTarget;
+      
+      // Bot Reaction Time (0.3s delay)
+      botStartTime = performance.now() + 300; 
+  }
+
+  interval=setInterval(()=>{ 
+      let now = performance.now();
+      let current = (now - startTime)/1000;
+      timerEl.textContent=format(current); 
+      
+      if(battleMode && battleActive) {
+          userBattleTime.textContent = format(current);
+          let uProg = (current / botTarget) * 100;
+          if(uProg > 100) uProg = 100;
+          userBattleBar.style.width = uProg + "%";
+          
+          // Bot Logic with Reaction Delay
+          let botCurrent = 0;
+          if (now > botStartTime) {
+             let botElapsed = (now - botStartTime) / 1000;
+             // Non-linear bot speed simulation (slow start, fast middle)
+             botCurrent = botElapsed; 
+          }
+
+          let bProg = (botCurrent / botTarget) * 100;
+          if(bProg > 100) {
+              bProg = 100;
+              botBattleTime.textContent = botTarget;
+          } else {
+              botBattleTime.textContent = format(botCurrent);
+          }
+          botBattleBar.style.width = bProg + "%";
+          
+          // Gap Calculation
+          let gap = current - botCurrent;
+          let gapSign = gap > 0 ? "+" : ""; // If positive, user is SLOWER (bad for race)
+          // Actually, if user time is higher than bot time for same progress... 
+          // Let's just compare % completion for a "race" feel
+          // Better: Compare estimated finish time
+          
+          if (botCurrent > 0) {
+              let diff = botCurrent - current; // Positive means user is faster (lower time)
+              let color = diff > 0 ? "#00ff00" : "#ff0000";
+              let sign = diff > 0 ? "-" : "+";
+              gapIndicator.textContent = `${sign}${Math.abs(diff).toFixed(2)}s`;
+              gapIndicator.style.color = color;
+          }
+      }
+  },10);
+}
+
+function stopTimer(){
+  running=false; clearInterval(interval); timerWrapper.classList.remove("running");
+  
+  // FOCUS MODE OFF
+  if(appVersion === 'plus') {
+      document.body.classList.remove('focus-active');
+  }
+
+  const t = (performance.now()-startTime)/1000;
+  
+  if(battleMode) {
+      battleActive = false;
+      userBattleTime.textContent = t.toFixed(2);
+      botBattleTime.textContent = botTarget; // Bot finishes
+      
+      userBattleBar.style.width = "100%";
+      botBattleBar.style.width = "100%";
+      
+      let win = t < parseFloat(botTarget);
+      battleResult.style.display = "flex";
+      
+      const resText = document.getElementById("battleResText");
+      const resSub = document.getElementById("battleResSub");
+      
+      if(win) {
+          winStreak++;
+          resText.textContent = "YOU WON!";
+          resText.style.color = "var(--battle-win)";
+          let xp = 30 + (winStreak > 3 ? 10 : 0);
+          resSub.textContent = `+${xp} XP ${winStreak > 3 ? '(Streak Bonus!)' : ''}`;
+          confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+      } else {
+          winStreak = 0;
+          resText.textContent = "BOT WON";
+          resText.style.color = "var(--battle-loss)";
+          resSub.textContent = "+10 XP (Participation)";
+      }
+      
+      winStreakVal.textContent = winStreak;
+      addSolve(t, win); 
+  } else {
+      addSolve(t);
+  }
+}
+
 manualInput.addEventListener("keydown", e => {
-  if(e.key === "Enter"){
-    let v = parseInt(manualInput.value);
-    if(!isNaN(v)){ addSolve(v/100); manualInput.value = ""; }
+  if (e.key === "Enter") {
+    let val = manualInput.value.trim(); if (!val) return;
+    let timeVal = val.includes(".") ? parseFloat(val) : parseInt(val, 10) / 100;
+    if (!isNaN(timeVal) && timeVal > 0) { addSolve(timeVal); manualInput.value = ""; }
   }
 });
 
-/* ---------- SOLVE MANAGEMENT ---------- */
-function addSolve(time){
-  solveList.push({time,penalty:0,dnf:false});
-  currentIndex=solveList.length-1;
-  newScramble();   // ← ONLY change
+/* ---------- ADD SOLVE (PROBATION SYSTEM) ---------- */
+function addSolve(time, battleWin = false){
+  const currentPuzzle = puzzleTypeSelect.value;
+  const threshold = CHEAT_THRESHOLDS[currentPuzzle] || 0.1;
+
+  // --- STEP 1: CHECK PROBATION ---
+  if (probationSolveRef !== null) {
+      // Check if that specific solve is STILL in the list
+      if (solveList.includes(probationSolveRef)) {
+          // They didn't delete it. They tried to solve again.
+          // EXECUTE BAN AND WIPE ACCOUNT.
+          triggerBan("Failure to delete cheated time.");
+          return;
+      } else {
+          // They deleted it! Good job. Reset probation.
+          probationSolveRef = null;
+          closeWarning(); // Ensure the toast is gone
+      }
+  }
+
+  // --- STEP 2: CHECK CURRENT TIME ---
+  // Create the solve object first
+  const newSolve = { time: time, penalty: 0, dnf: false, scramble: scrambleEl.innerText, comment: "" };
+
+  if (time > 0 && time < threshold) {
+      // It's a suspicious time. 
+      // 1. Add it to the list (so they CAN delete it)
+      solveList.push(newSolve);
+      currentIndex = solveList.length - 1;
+      
+      // 2. Mark this specific object as the reason for probation
+      probationSolveRef = newSolve;
+      
+      // 3. Show the warning toast
+      updateUI();
+      triggerWarning();
+      return; // Stop here, don't give XP for this
+  }
+
+  // --- STEP 3: NORMAL ADD ---
+  const validSolves = solveList.filter(s => !s.dnf);
+  let previousBest = validSolves.length > 0 ? Math.min(...validSolves.map(s => s.time + s.penalty)) : Infinity;
+
+  solveList.push(newSolve);
+  currentIndex = solveList.length - 1;
+
+  let isPB = false;
+  if (time < previousBest) { isPB = true; triggerPB(time); }
+
+  if(currentUser) {
+    let xpGain = 15; 
+    if (isPB) xpGain += 100;
+    if (battleWin) xpGain += (winStreak > 3 ? 10 : 15); // Bonus XP
+    addXP(xpGain);
+    checkAchievements(time);
+  }
+
+  newScramble();
   updateUI();
 }
 
-function addPenalty(){ if(currentIndex>=0 && !solveList[currentIndex].dnf){ solveList[currentIndex].penalty+=0.02; updateUI(); } }
+function triggerPB(time) {
+    var duration = 3000; var animationEnd = Date.now() + duration; var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+    var interval = setInterval(function() {
+      var timeLeft = animationEnd - Date.now();
+      if (timeLeft <= 0) { return clearInterval(interval); }
+      var particleCount = 50 * (timeLeft / duration);
+      confetti(Object.assign({}, defaults, { particleCount, origin: { x: Math.random() * 0.2 + 0.1, y: Math.random() - 0.2 } }));
+      confetti(Object.assign({}, defaults, { particleCount, origin: { x: Math.random() * 0.2 + 0.7, y: Math.random() - 0.2 } }));
+    }, 250);
+    pbTimeText.textContent = format(time); pbNotification.classList.add('show'); setTimeout(() => { pbNotification.classList.remove('show'); }, 3000);
+}
+
+function addPenalty(){ if(currentIndex>=0 && !solveList[currentIndex].dnf){ solveList[currentIndex].penalty += 2; updateUI(); } }
 function setDNF(){ if(currentIndex>=0){ solveList[currentIndex].dnf=true; updateUI(); } }
 
-/* ---------- STATISTICS & UI ---------- */
-function calcAO(n){
-  let valid=solveList.filter(s=>!s.dnf);
-  if(valid.length<n) return "-";
-  let last=valid.slice(-n).map(s=>s.time+s.penalty).sort((a,b)=>a-b);
-  last.shift(); last.pop();
-  return format(last.reduce((a,b)=>a+b,0)/(n-2));
+/* ---------- STATS CALCS ---------- */
+function calcAO(n) {
+  if (solveList.length < n) return "-";
+  const last = solveList.slice(-n);
+  const dnfs = last.filter(s => s.dnf).length;
+  if (dnfs >= 2) return "DNF";
+  let times = last.map(s => s.dnf ? Infinity : s.time + s.penalty);
+  times.sort((a, b) => a - b); times.shift(); times.pop();
+  if (times.includes(Infinity)) return "DNF";
+  return format(times.reduce((a, b) => a + b, 0) / times.length);
 }
+
+function calcAo5AtIndex(index) {
+    if (index < 4) return "-";
+    const subset = solveList.slice(index - 4, index + 1);
+    let dnfCount = 0; let times = [];
+    for(let s of subset) {
+        if(s.dnf) { dnfCount++; times.push(Infinity); } else { times.push(s.time + s.penalty); }
+    }
+    if(dnfCount >= 2) return "DNF";
+    times.sort((a,b) => a - b); times.shift(); times.pop();
+    return format(times.reduce((a,b) => a+b, 0) / 3);
+}
+
 function updateUI(){
-  solvesDiv.innerHTML = "";
+  solvesDiv.innerHTML="";
   [...solveList].reverse().forEach((s,i)=>{
-    let idx = solveList.length-i;
-    let t;
-    if(s.dnf){ t = "DNF"; } 
-    else { let total = s.time + s.penalty; t = format(total); if(s.penalty) t += " +"; }
+    let actualIndex = solveList.length - 1 - i;
+    let t = s.dnf ? "DNF" : format(s.time + s.penalty) + (s.penalty ? " +" : "");
+    let ao5Moment = calcAo5AtIndex(actualIndex);
     let d = document.createElement("div");
     d.className = "solve";
+    d.onclick = () => openSolveModal(actualIndex);
     let color = "var(--text)";
-    if(idx === solveList.length) color = "var(--recent-solve)";
+    if(actualIndex === solveList.length - 1) color = "var(--recent-solve)";
     if(s.dnf) color = "var(--dnf)";
     if(s.penalty && !s.dnf) color = "var(--plus2)";
-    d.innerHTML = `<span>#${idx}</span><span style="color:${color}">${t}</span>`;
+    let commentIcon = s.comment ? `<span class="comment-icon">📝</span>` : "";
+    d.innerHTML = `<span class="col-id">#${actualIndex + 1}</span><span class="col-time" style="color:${color}">${t}</span><span class="col-ao5">${ao5Moment}</span><span class="col-icon">${commentIcon}</span>`;
     solvesDiv.appendChild(d);
   });
-  countEl.textContent = solveList.length;
-  ao5El.textContent = calcAO(5);
-  ao12El.textContent = calcAO(12);
-  let validTimes = solveList.filter(s=>!s.dnf).map(s=>s.time+s.penalty);
-  bestEl.textContent = validTimes.length ? format(Math.min(...validTimes)) : "-";
-  worstEl.textContent = validTimes.length ? format(Math.max(...validTimes)) : "-";
-  chart.data.labels = solveList.map((_,i)=>i+1);
-  chart.data.datasets[0].data = solveList.map(s=>s.dnf?null:(s.time+s.penalty));
-  chart.update();
-  updateTileStyle();
-}
-
-/* ---------- MODE TOGGLE ---------- */
-function toggleMode(){ timerMode=!timerMode; manualControls.style.display=timerMode?"none":"flex"; modeBtn.textContent=timerMode?"Timer Mode":"Manual Mode"; }
-
-/* ---------- BACKGROUND ---------- */
-function setBackground(e){ const file=e.target.files[0]; if(!file) return; const reader=new FileReader(); reader.onload=()=>{ backgroundData=reader.result; document.body.style.backgroundImage=`url(${backgroundData})`; }; reader.readAsDataURL(file); }
-function clearBackground(){ backgroundData=null; document.body.style.backgroundImage=""; }
-
-/* ---------- SESSIONS ---------- */
-function saveAllSessions(){ sessions[currentSession]=solveList; localStorage.setItem("cubeSessions",JSON.stringify(sessions)); }
-function loadAllSessions(){ sessions=JSON.parse(localStorage.getItem("cubeSessions"))||{}; for(let i=1;i<=15;i++){ if(!sessions[i]) sessions[i]=[]; } updateSessionSelect(); }
-function updateSessionSelect(){ sessionSelect.innerHTML=""; for(let i=1;i<=15;i++){ let o=document.createElement("option"); o.value=i; o.text="Session "+i; sessionSelect.appendChild(o); } sessionSelect.value=currentSession; }
-function loadSession(){ solveList=sessions[currentSession]||[]; currentIndex=solveList.length-1; updateUI(); }
-function resetSession(){ if(confirm("Reset current session?")){ solveList=[]; currentIndex=-1; updateUI(); } }
-
-/* ---------- SAVE ALL INCLUDING POSITIONS & SIZE ---------- */
-function saveAll(){
-  sessions[currentSession]=solveList;
-  const layout = {};
-  document.querySelectorAll(".draggable").forEach(el=>{
-    layout[el.id] = {top: el.style.top, left: el.style.left, width: el.style.width, height: el.style.height};
-  });
-  const data={sessions, background: backgroundData, layout};
-  localStorage.setItem("cubeAllData", JSON.stringify(data));
-  alert("All sessions, background, layout saved!");
-}
-
-function loadAll(){
-  const data=localStorage.getItem("cubeAllData");
-  if(!data) return;
-  const parsed=JSON.parse(data);
-  sessions=parsed.sessions||{};
-  backgroundData=parsed.background||null;
-  if(backgroundData) document.body.style.backgroundImage=`url(${backgroundData})`;
   
-  if(parsed.layout){
-    Object.entries(parsed.layout).forEach(([id,pos])=>{
-      const el = document.getElementById(id);
-      if(el){
-        el.style.top=pos.top; el.style.left=pos.left;
-        el.style.width=pos.width || "";
-        el.style.height=pos.height || "";
-      }
-    });
+  countEl.textContent=solveList.length;
+  ao5El.textContent=calcAO(5); document.getElementById("ao5Below").textContent = "ao5: " + calcAO(5);
+  ao12El.textContent=calcAO(12);
+  
+  let validTimes=solveList.filter(s=>!s.dnf).map(s=>s.time+s.penalty);
+  bestEl.textContent=validTimes.length?format(Math.min(...validTimes)):"-";
+  worstEl.textContent=validTimes.length?format(Math.max(...validTimes)):"-";
+  
+  // BPA/WPA
+  let bpaText = "-", wpaText = "-";
+  if (solveList.length >= 4) {
+    const last4 = solveList.slice(-4).map(s => s.dnf ? Infinity : s.time + s.penalty);
+    let bpaSet = [...last4, 0].sort((a,b) => a - b);
+    let bpaSum = bpaSet[1] + bpaSet[2] + bpaSet[3];
+    bpaText = (bpaSum === Infinity) ? "DNF" : format(bpaSum / 3);
+    let wpaSet = [...last4, Infinity].sort((a,b) => a - b);
+    let wpaSum = wpaSet[1] + wpaSet[2] + wpaSet[3];
+    wpaText = (wpaSum === Infinity) ? "DNF" : format(wpaSum / 3);
+  }
+  bpaEl.textContent = bpaText; wpaEl.textContent = wpaText;
+  
+  chart.data.labels=solveList.map((_,i)=>i+1);
+  chart.data.datasets[0].data=solveList.map(s=>s.dnf?null:(s.time+s.penalty));
+  chart.update();
+  
+  updateTileStyle(); updateXPUI(); saveAll();
+}
+
+/* ---------- XP & PROFILE LOGIC (IMPROVED) ---------- */
+function calcLevelXP(lvl) {
+    return Math.floor(100 * Math.pow(1.2, lvl - 1));
+}
+
+function addXP(amount) {
+  if (!currentUser) return;
+  // Anti-Hack: Prevent massive XP dumps via console
+  if (amount > 1000) { triggerBan("Hack", "XP Overflow"); return; }
+  
+  const requiredXP = calcLevelXP(userLevel);
+  userXP += amount;
+  
+  // Level up loop in case huge XP gained
+  while (userXP >= calcLevelXP(userLevel)) {
+      userXP -= calcLevelXP(userLevel);
+      userLevel++;
+      triggerLevelUp(userLevel);
+  }
+  saveAccountData(); updateXPUI();
+}
+
+function triggerLevelUp(lvl) {
+  var duration = 3000; var defaults = { startVelocity: 45, spread: 360, ticks: 100, zIndex: 6000 };
+  confetti(Object.assign({}, defaults, { particleCount: 100, origin: { y: 0.6 } }));
+  const notif = document.getElementById("levelNotification");
+  document.getElementById("levelText").textContent = "Level " + lvl;
+  notif.classList.add('show'); setTimeout(() => { notif.classList.remove('show'); }, 3000);
+}
+
+function updateXPUI() {
+  const guestIcon = document.getElementById("guestAuthIcon");
+  const xpBadge = document.getElementById("xpBadge");
+
+  if (currentUser) {
+    guestIcon.style.display = "none"; xpBadge.style.display = "flex";
+    document.getElementById("topNavUser").textContent = currentUser;
+    document.getElementById("topNavLevel").textContent = userLevel;
+    
+    // Improved progress bar calculation
+    const required = calcLevelXP(userLevel);
+    const percentage = Math.min((userXP / required) * 100, 100);
+    document.getElementById("topNavXpFill").style.width = percentage + "%";
+    
+    // Battle Mode Logic: Premium or Plus Mode
+    if (userAccountType === 'premium' || appVersion === 'plus') {
+        btnBattleMode.classList.remove("locked-btn");
+        btnBattleMode.innerHTML = "Battle";
+        btnBattleMode.title = "";
+    } else {
+        btnBattleMode.classList.add("locked-btn");
+        btnBattleMode.innerHTML = "Battle 🔒";
+        btnBattleMode.title = "Requires Premium Account";
+    }
+    
   } else {
-    document.getElementById("modePanel").style.top="50px"; document.getElementById("modePanel").style.left="50px";
-    document.getElementById("colorPanel").style.top="50px"; document.getElementById("colorPanel").style.right="50px";
-    document.getElementById("leftPanel").style.top="150px"; document.getElementById("leftPanel").style.left="50px";
-    document.getElementById("rightPanel").style.top="150px"; document.getElementById("rightPanel").style.right="50px";
+    guestIcon.style.display = "block"; xpBadge.style.display = "none";
+    
+    // Lock Battle Button for Guests (unless Plus Mode force unlocks it visually)
+    if(appVersion === 'plus') {
+        btnBattleMode.classList.remove("locked-btn");
+        btnBattleMode.innerHTML = "Battle";
+    } else {
+        btnBattleMode.classList.add("locked-btn");
+        btnBattleMode.innerHTML = "Battle 🔒";
+        btnBattleMode.title = "Requires Premium Account";
+    }
   }
 }
 
-/* ---------- COLOR PICKERS ---------- */
-document.getElementById("timerColor").addEventListener("input", e => { document.documentElement.style.setProperty("--accent", e.target.value); timerEl.style.color=e.target.value; updateUI(); });
-document.getElementById("recentColor").addEventListener("input", e => { document.documentElement.style.setProperty("--recent-solve", e.target.value); updateUI(); });
-document.getElementById("plus2Color").addEventListener("input", e => { document.documentElement.style.setProperty("--plus2", e.target.value); updateUI(); });
-document.getElementById("dnfColor").addEventListener("input", e => { document.documentElement.style.setProperty("--dnf", e.target.value); updateUI(); });
+// PROFILE TABS
+function setTab(idx) {
+    const tabs = document.querySelectorAll('.p-tab');
+    const contents = document.querySelectorAll('.p-content');
+    tabs.forEach((t, i) => t.classList.toggle('active', i === idx));
+    contents.forEach((c, i) => c.classList.toggle('active', i === idx));
+}
 
-/* ---------- SESSION & PUZZLE ---------- */
-sessionSelect.addEventListener("change",()=>{ currentSession=sessionSelect.value; loadSession(); });
-puzzleTypeSelect.addEventListener("change",()=>{ newScramble(); });
-
-/* ---------- EDIT MODE DRAG & RESIZE ---------- */
-const draggables = document.querySelectorAll(".draggable");
-let offsetX, offsetY, draggingEl=null;
-let resizingEl=null, startWidth, startHeight, startX, startY;
-
-document.getElementById("editToggle").addEventListener("click", ()=>{
-  editMode=!editMode;
-  document.getElementById("editToggle").textContent = `Edit Mode: ${editMode?"ON":"OFF"}`;
-  draggables.forEach(el => el.querySelector(".resize-handle").style.display = editMode ? "block" : "none");
-  draggables.forEach(el => el.style.border = editMode ? "1px dashed yellow" : "none");
-});
-
-// Drag
-draggables.forEach(el=>{
-  el.addEventListener("mousedown", e=>{
-    if(!editMode) return;
-    if(e.target.classList.contains("resize-handle")) return;
-    draggingEl=el;
-    offsetX=e.offsetX; offsetY=e.offsetY;
-  });
-});
-document.addEventListener("mousemove", e=>{
-  if(draggingEl){
-    draggingEl.style.left=(e.clientX-offsetX)+"px";
-    draggingEl.style.top=(e.clientY-offsetY)+"px";
-  }
-  if(resizingEl){
-    resizingEl.style.width=(startWidth + e.clientX - startX)+"px";
-    resizingEl.style.height=(startHeight + e.clientY - startY)+"px";
-  }
-});
-document.addEventListener("mouseup", e=>{ draggingEl=null; resizingEl=null; });
-
-// Resize
-draggables.forEach(el=>{
-  const handle=el.querySelector(".resize-handle");
-  handle.addEventListener("mousedown", e=>{
-    if(!editMode) return;
-    resizingEl=el;
-    startWidth=el.offsetWidth; startHeight=el.offsetHeight;
-    startX=e.clientX; startY=e.clientY;
-    e.stopPropagation();
-  });
-});
-
-/* ---------- TILE STYLE SWITCHER ---------- */
-function updateTileStyle() {
-  const style = tileStyleSelect.value;
-  if(style === "default") {
-    panels.forEach(p => p.style.background = "");
-    solidColorLabel.style.display = "none";
-  } else if(style === "solid") {
-    panels.forEach(p => p.style.background = solidColorInput.value);
-    solidColorLabel.style.display = "inline-block";
-  } else if(style === "custom") {
-    panels.forEach(p => {
-      if(p.dataset.customColor) p.style.background = p.dataset.customColor;
-      else p.style.background = "";
+// RENDER PROFILE DATA
+function renderProfile() {
+    document.getElementById("pName").textContent = currentUser;
+    
+    // Set Badge Logic
+    const pBadge = document.getElementById("pBadge");
+    // If we are in Plus mode, show premium badge regardless
+    const displayType = (appVersion === 'plus') ? 'premium' : userAccountType;
+    pBadge.className = "account-badge " + (displayType === 'premium' ? 'premium' : 'standard');
+    pBadge.textContent = displayType;
+    
+    document.getElementById("pAvatar").textContent = currentUser.charAt(0).toUpperCase();
+    document.getElementById("pLevel").textContent = `Level ${userLevel} • ${Math.floor(userXP)} / ${calcLevelXP(userLevel)} XP`;
+    let totalSolves = 0; let globalBest = Infinity; let totalTime = 0;
+    Object.values(sessions).forEach(arr => {
+        arr.forEach(s => {
+            totalSolves++;
+            if(!s.dnf) {
+                let t = s.time + s.penalty;
+                if(t < globalBest) globalBest = t;
+                totalTime += t;
+            }
+        });
     });
-    solidColorLabel.style.display = "none";
-  }
+    document.getElementById("statTotalSolves").textContent = totalSolves;
+    document.getElementById("statGlobalPB").textContent = globalBest === Infinity ? "-" : format(globalBest);
+    let hours = Math.floor(totalTime / 3600); let mins = Math.floor((totalTime % 3600) / 60);
+    document.getElementById("statPlaytime").textContent = `${hours}h ${mins}m`;
+    const grid = document.getElementById("badgesGrid"); grid.innerHTML = ""; let unlockedCount = 0;
+    ACHIEVEMENTS.forEach(ach => {
+        const isUnlocked = userAchievements.includes(ach.id);
+        if(isUnlocked) unlockedCount++;
+        const el = document.createElement("div");
+        el.className = `badge-item ${isUnlocked ? 'unlocked' : ''}`;
+        el.innerHTML = `${ach.icon} <div class="badge-tooltip"><b>${ach.name}</b><br>${ach.desc}</div>`;
+        grid.appendChild(el);
+    });
+    document.getElementById("statBadgesCount").textContent = `${unlockedCount} / ${ACHIEVEMENTS.length}`;
 }
-tileStyleSelect.addEventListener("change", updateTileStyle);
-solidColorInput.addEventListener("input", updateTileStyle);
 
-// Double-click for custom colors
-panels.forEach(p=>{
-  p.addEventListener("dblclick", e=>{
-    if(tileStyleSelect.value!=="custom") return;
-    const color = prompt("Enter hex color for this tile:", p.dataset.customColor||"#555555");
-    if(color){ p.dataset.customColor=color; p.style.background=color; }
-  });
-});
+/* ---------- AUTH / STORAGE ---------- */
+let authMode = 'login';
+const authModal = document.getElementById("authModal");
 
-/* ---------- INIT ---------- */
-loadAll();
-loadAllSessions();
-loadSession();
-updateUI();
+function toggleAuthModal() {
+    if(authModal.style.display === "flex") {
+        authModal.style.display = "none";
+    } else {
+        authModal.style.display = "flex";
+        if(currentUser) {
+            document.getElementById("loggedInView").style.display = "block";
+            document.getElementById("loggedOutView").style.display = "none";
+            renderProfile();
+        } else {
+            document.getElementById("loggedInView").style.display = "none";
+            document.getElementById("loggedOutView").style.display = "block";
+            document.getElementById("usernameInput").focus();
+            // Reset to default view
+            switchAuthTab('login');
+        }
+    }
+}
+
+function switchAuthTab(tab) {
+    authMode = tab;
+    document.getElementById("tabLogin").className = tab === 'login' ? 'tab-btn active' : 'tab-btn';
+    document.getElementById("tabRegister").className = tab === 'register' ? 'tab-btn active' : 'tab-btn';
+    document.getElementById("authSubmitBtn").textContent = tab === 'login' ? 'Login' : 'Register';
+    
+    // Show/Hide Register Options
+    const regOpts = document.getElementById("registerOptions");
+    regOpts.style.display = tab === 'register' ? 'block' : 'none';
+}
+
+function handleAuth() {
+    const userIn = document.getElementById("usernameInput").value.trim();
+    const passIn = document.getElementById("passwordInput").value.trim();
+    
+    if(!userIn || !passIn) { alert("Please enter username and password"); return; }
+    const key = "cubeLearnPro_user_" + userIn;
+    
+    if(authMode === 'register') {
+        const typeSelect = document.getElementById("regAccountType").value;
+        if(localStorage.getItem(key)) alert("Username already exists!");
+        else {
+            // SAVE NEW USER WITH ACCOUNT TYPE
+            localStorage.setItem(key, JSON.stringify({ 
+                xp: 0, 
+                level: 1, 
+                achievements: [], 
+                sessions: {},
+                accountType: typeSelect
+            }));
+            alert("Account created! Login to continue."); switchAuthTab('login');
+        }
+    } else {
+        if(!localStorage.getItem(key)) alert("User not found.");
+        else { loginUser(userIn); toggleAuthModal(); }
+    }
+}
+
+function loginUser(username) { currentUser = username; loadAll(); loadSession(); updateUI(); }
+function handleLogout() { currentUser = null; userXP = 0; userLevel = 1; userAchievements = []; userAccountType="standard"; toggleAuthModal(); loadAll(); loadSession(); updateUI(); }
+
+/* ---------- STORE FUNCTIONS ---------- */
+function toggleStore() {
+    // If in PLUS mode, Battle Mode is already unlocked, so we don't need the store
+    if(appVersion === 'plus') {
+        alert("Battle Mode is included in PLUS!");
+        return;
+    }
+    const el = document.getElementById("storeModal");
+    el.style.display = (el.style.display === "flex") ? "none" : "flex";
+}
+
+function processPayment() {
+    const btn = document.querySelector(".btn-buy");
+    const originalText = btn.textContent;
+    
+    // Simulate processing
+    btn.textContent = "Processing...";
+    btn.style.opacity = "0.7";
+    btn.disabled = true;
+
+    setTimeout(() => {
+        // Success!
+        userAccountType = "premium";
+        saveAccountData(); // Save to localStorage
+        updateXPUI();      // Update badges and buttons
+        
+        btn.textContent = "Success!";
+        btn.style.background = "#00ff00";
+        
+        // Celebration confetti
+        confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 }, colors: ['#FFD700', '#FFA500'] });
+
+        setTimeout(() => {
+            toggleStore();
+            btn.textContent = originalText;
+            btn.style.background = "";
+            btn.style.opacity = "1";
+            btn.disabled = false;
+            alert("Upgrade Successful! Battle Mode Unlocked.");
+        }, 1500);
+    }, 2000);
+}
+
+/* ---------- MODAL HELPERS ---------- */
+function openSolveModal(index) {
+  selectedSolveIndex = index; const s = solveList[index];
+  let displayTime = s.dnf ? "DNF" : format(s.time + s.penalty); if (s.penalty && !s.dnf) displayTime += "+";
+  modalTime.textContent = displayTime; modalTime.style.color = s.dnf ? "var(--dnf)" : (s.penalty ? "var(--plus2)" : "var(--accent)");
+  modalScramble.textContent = s.scramble || "No scramble recorded"; modalComment.value = s.comment || "";
+  modalBtnPlus2.className = s.penalty ? "active" : ""; modalBtnDNF.className = s.dnf ? "active" : "";
+  solveModal.style.display = "flex";
+}
+function closeSolveModal() { solveModal.style.display = "none"; selectedSolveIndex = -1; }
+function toggleModalPlus2() { if (selectedSolveIndex === -1) return; const s = solveList[selectedSolveIndex]; if (s.dnf) s.dnf = false; s.penalty = s.penalty === 2 ? 0 : 2; updateUI(); openSolveModal(selectedSolveIndex); }
+function toggleModalDNF() { if (selectedSolveIndex === -1) return; const s = solveList[selectedSolveIndex]; s.dnf = !s.dnf; if (s.dnf) s.penalty = 0; updateUI(); openSolveModal(selectedSolveIndex); }
+function updateModalComment() { if (selectedSolveIndex === -1) return; solveList[selectedSolveIndex].comment = modalComment.value; updateUI(); }
+function deleteModalSolve() { if (selectedSolveIndex === -1) return; if(confirm("Delete solve?")) { solveList.splice(selectedSolveIndex, 1); closeSolveModal(); updateUI(); } }
+
+/* ---------- SAVING/LOADING ---------- */
+function getStorageKey() { return currentUser ? "cubeLearnPro_user_" + currentUser : "cubeLearnPro_v2"; }
+function saveAll(){
+  sessions[currentSession] = solveList;
+  const layout = {}; document.querySelectorAll(".draggable").forEach(el=>{ layout[el.id] = {top:el.style.top, left:el.style.left, width:el.style.width, height:el.style.height}; });
+  
+  const bigData = { 
+      sessions: sessions, 
+      background: backgroundData, 
+      layout: layout, 
+      xp: currentUser ? userXP : 0, 
+      level: currentUser ? userLevel : 1, 
+      achievements: userAchievements,
+      accountType: userAccountType,
+      appVersion: appVersion // Save selected version
+  };
+  localStorage.setItem(getStorageKey(), JSON.stringify(bigData));
+}
+function saveAccountData() { saveAll(); }
+function loadAll(){
+  const data = localStorage.getItem(getStorageKey());
+  if(data) {
+    const parsed = JSON.parse(data); sessions = parsed.sessions || {}; backgroundData = parsed.background || null;
+    appVersion = parsed.appVersion || 'standard'; // Load version pref
+
+    if(currentUser) { 
+        userXP = parsed.xp || 0; 
+        userLevel = parsed.level || 1; 
+        userAchievements = parsed.achievements || []; 
+        userAccountType = parsed.accountType || 'standard';
+    } 
+    else { userXP = 0; userLevel = 1; userAchievements = []; userAccountType = "standard"; }
+    
+    if(backgroundData) document.body.style.backgroundImage=`url(${backgroundData})`;
+    if(parsed.layout){ Object.entries(parsed.layout).forEach(([id,pos])=>{ const el=document.getElementById(id); if(el){ el.style.top=pos.top; el.style.left=pos.left; el.style.width=pos.width; el.style.height=pos.height; } }); }
+    
+    // Apply Version Logic immediately
+    toggleVersion(appVersion);
+
+  } else { sessions = {}; if(currentUser) { userXP = 0; userLevel = 1; userAchievements = []; userAccountType = "standard"; } }
+  for(let i=1; i<=15; i++){ if(!sessions[i]) sessions[i] = []; }
+  sessionSelect.innerHTML = ""; for(let i=1; i<=15; i++){ let o = document.createElement("option"); o.value = i; o.text = "Session " + i; sessionSelect.appendChild(o); }
+  sessionSelect.value = currentSession;
+}
+function loadSession(){ solveList = sessions[currentSession] || []; currentIndex = solveList.length - 1; updateUI(); }
+sessionSelect.addEventListener("change", () => { sessions[currentSession] = solveList; saveAll(); currentSession = sessionSelect.value; loadSession(); });
+function resetSession(){ if(confirm("Reset session?")){ solveList=[]; currentIndex=-1; updateUI(); } }
+
+/* ---------- EXTRAS ---------- */
+function toggleSettings() { settingsPanel.style.display = settingsPanel.style.display === "flex" ? "none" : "flex"; }
+function triggerBgUpload() { document.getElementById("hiddenBgInput").click(); }
+function setBackground(e){ const file=e.target.files[0]; if(!file) return; const reader=new FileReader(); reader.onload=()=>{ backgroundData=reader.result; document.body.style.backgroundImage=`url(${backgroundData})`; saveAll(); }; reader.readAsDataURL(file); }
+bgColorPicker.addEventListener("input",e=>{ backgroundData=null; document.body.style.backgroundImage=""; document.documentElement.style.setProperty("--bg", e.target.value); saveAll(); });
+function clearBackground(){ backgroundData=null; document.body.style.backgroundImage=""; document.documentElement.style.setProperty("--bg","linear-gradient(135deg, #0f1115, #161a22)"); saveAll(); }
+window.addEventListener("contextmenu", e => { e.preventDefault(); contextMenu.style.top = `${e.clientY}px`; contextMenu.style.left = `${e.clientX}px`; contextMenu.style.display = "block"; });
+window.addEventListener("click", () => { contextMenu.style.display = "none"; });
+themeSelect.addEventListener("change", (e) => applyTheme(e.target.value));
+document.getElementById("timerColor").addEventListener("input",e=>{ document.documentElement.style.setProperty("--accent",e.target.value); timerEl.style.color=e.target.value; saveAll(); });
+document.getElementById("chartColorPicker").addEventListener("input", e => { document.documentElement.style.setProperty("--chart-line", e.target.value); if(chart) { chart.data.datasets[0].borderColor = e.target.value; chart.update(); } saveAll(); });
+function updateTileStyle(){ const style=tileStyleSelect.value; if(style==="default"){ panels.forEach(p=>p.style.background=""); solidColorLabel.style.display="none"; }else if(style==="solid"){ panels.forEach(p=>p.style.background=solidColorInput.value); solidColorLabel.style.display="inline-block"; }else{ panels.forEach(p=>p.style.background=p.dataset.customColor||""); solidColorLabel.style.display="none"; } }
+tileStyleSelect.addEventListener("change",() => { updateTileStyle(); saveAll(); }); solidColorInput.addEventListener("input",() => { updateTileStyle(); saveAll(); });
+panels.forEach(p=>{ p.addEventListener("dblclick",()=>{ if(tileStyleSelect.value!=="custom") return; const c=prompt("Enter hex color:",p.dataset.customColor||"#555555"); if(c){ p.dataset.customColor=c; p.style.background=c; saveAll(); } }); });
+function toggleEditMode() { editMode = !editMode; document.getElementById("editToggle").textContent = `Edit Mode: ${editMode?"ON":"OFF"}`; panels.forEach(el => { el.querySelector(".resize-handle").style.display = editMode ? "block" : "none"; el.style.border = editMode ? "1px dashed yellow" : "none"; }); }
+let draggingEl=null, resizingEl=null, startX, startY, startWidth, startHeight, offsetX, offsetY;
+panels.forEach(el=>{ el.addEventListener("mousedown",e=>{ if(!editMode || e.target.classList.contains("resize-handle")) return; draggingEl=el; offsetX=e.offsetX; offsetY=e.offsetY; }); el.querySelector(".resize-handle").addEventListener("mousedown",e=>{ if(!editMode) return; resizingEl=el; startWidth=el.offsetWidth; startHeight=el.offsetHeight; startX=e.clientX; startY=e.clientY; e.stopPropagation(); }); });
+document.addEventListener("mousemove",e=>{ if(draggingEl){ draggingEl.style.left=(e.clientX-offsetX)+"px"; draggingEl.style.top=(e.clientY-offsetY)+"px"; } if(resizingEl){ resizingEl.style.width=(startWidth+e.clientX-startX)+"px"; resizingEl.style.height=(startHeight+e.clientY-startY)+"px"; } });
+document.addEventListener("mouseup",()=>{ if(draggingEl || resizingEl) saveAll(); draggingEl=null; resizingEl=null; });
+
+/* Updated Mode Switcher */
+function setMode(mode) {
+    if (mode === 'battle') {
+        if (!currentUser) {
+            alert("Battle Mode requires an account.");
+            toggleAuthModal();
+            return;
+        }
+        // In PLUS mode, battle is always unlocked
+        if (userAccountType !== 'premium' && appVersion !== 'plus') {
+            // OPEN STORE
+            toggleStore();
+            return;
+        }
+    }
+
+    // Reset all states
+    timerMode = false; battleMode = false;
+    timerWrapper.classList.remove("manual-mode");
+    battlePanel.style.display = "none";
+    
+    btnTimerMode.classList.remove("active");
+    btnManualMode.classList.remove("active");
+    btnBattleMode.classList.remove("active");
+    
+    if (mode === 'timer') {
+        timerMode = true;
+        btnTimerMode.classList.add("active");
+        timerEl.style.display = "block";
+        manualInput.style.display = "none";
+        
+    } else if (mode === 'manual') {
+        timerWrapper.classList.add("manual-mode");
+        btnManualMode.classList.add("active");
+        timerEl.style.display = "none";
+        manualInput.style.display = "block";
+        setTimeout(() => manualInput.focus(), 50);
+        
+    } else if (mode === 'battle') {
+        battleMode = true;
+        btnBattleMode.classList.add("active");
+        battlePanel.style.display = "flex";
+        timerEl.style.display = "block";
+        manualInput.style.display = "none";
+        battleResult.style.display = "none";
+        userBattleBar.style.width = "0%"; botBattleBar.style.width = "0%";
+    }
+}
+
+/* INIT */
+loadAll(); loadSession(); newScramble(); updateUI();
+
 </script>
 </body>
 </html>
